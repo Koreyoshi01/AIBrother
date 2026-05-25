@@ -1,28 +1,38 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import {
+  encodeDocumentFile,
+  MAX_ATTACHMENTS_PER_MESSAGE,
+  resolveAttachmentKind,
+  type AttachmentKind,
+} from "@/lib/fileAttach";
 import { encodeImage, type EncodeFailure } from "@/lib/imageEncode";
+import type { KnowledgeImportResult } from "@/lib/nanobot-client";
 
 /** Lifecycle stages of one attachment:
  *
  * - ``encoding``  — posted to the Worker; chip shows a spinner
- * - ``ready``     — ``dataUrl`` available; safe to submit
- * - ``error``     — validation / decode failure; chip shows inline error
+ * - ``importing`` — encoded payload is being indexed into the knowledge base
+ * - ``imported``  — stored in the knowledge base; safe to send text-only turns
+ * - ``error``     — validation / decode / import failure; chip shows inline error
  */
-export type AttachmentStatus = "encoding" | "ready" | "error";
+export type AttachmentStatus = "encoding" | "importing" | "imported" | "error";
 
 export interface AttachedImage {
   id: string;
   file: File;
-  /** Optimistic ``blob:`` preview URL; revoked on ``remove`` / ``clear`` /
-   * unmount. */
-  previewUrl: string;
+  kind: AttachmentKind;
+  /** Optimistic ``blob:`` preview URL for images; revoked on remove/clear. */
+  previewUrl?: string;
   status: AttachmentStatus;
-  /** Populated when ``status === "ready"``. */
+  /** Populated after encoding, before import completes. */
   dataUrl?: string;
   /** Size of the final encoded payload (base64 bytes decoded). */
   encodedBytes?: number;
   /** Whether the Worker re-encoded the image to hit the size budget. */
   normalized?: boolean;
+  /** Knowledge-base path after a successful import. */
+  knowledgePath?: string;
   /** Human-readable validation / encoding error when ``status === "error"``. */
   error?: AttachmentError;
 }
@@ -32,21 +42,14 @@ export interface AttachedImage {
  * Callers localize these via the ``composer.imageRejected.*`` i18n table. */
 export type AttachmentError =
   | "unsupported_type"   // server whitelist excludes this MIME
-  | "too_many_images"    // per-message cap (4) reached before enqueue
+  | "too_many_images"    // per-message cap reached before enqueue
   | "magic_mismatch"     // extension lies about the real content
   | "decode_failed"      // Worker couldn't decode / re-encode
   | "too_large"          // even after normalization we exceed the budget
+  | "import_failed"      // knowledge-base import rejected by the server
   | "io";                // file read failed at the browser layer
 
-export const MAX_IMAGES_PER_MESSAGE = 4;
-
-/** MIME whitelist — mirrors the server's and the ``<input accept>`` attr. */
-const ACCEPTED_MIMES: ReadonlySet<string> = new Set([
-  "image/png",
-  "image/jpeg",
-  "image/webp",
-  "image/gif",
-]);
+export const MAX_IMAGES_PER_MESSAGE = MAX_ATTACHMENTS_PER_MESSAGE;
 
 function uuid(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -70,6 +73,11 @@ function mapEncodeFailure(reason: EncodeFailure["reason"]): AttachmentError {
   }
 }
 
+export type KnowledgeImportFn = (
+  dataUrl: string,
+  file: File,
+) => Promise<KnowledgeImportResult>;
+
 export interface UseAttachedImagesApi {
   images: AttachedImage[];
   /** Enqueue new files. Returns the list of rejected files so the caller can
@@ -84,9 +92,11 @@ export interface UseAttachedImagesApi {
    * successful submit — the optimistic bubble holds onto an independent
    * ``data:`` URL so tearing down blob previews here is safe. */
   clear: () => void;
-  /** ``true`` when at least one image is still encoding — Send should wait. */
+  /** ``true`` when at least one attachment is still encoding — Send should wait. */
   encoding: boolean;
-  /** ``true`` when we've hit ``MAX_IMAGES_PER_MESSAGE``. */
+  /** ``true`` when at least one attachment is being imported into the KB. */
+  importing: boolean;
+  /** ``true`` when we've hit ``MAX_ATTACHMENTS_PER_MESSAGE``. */
   full: boolean;
 }
 
@@ -96,10 +106,16 @@ export interface UseAttachedImagesApi {
  *   - validation (MIME whitelist, count cap)
  *   - blob URL creation + revocation
  *   - Worker orchestration
+ *   - automatic knowledge-base import
  *   - focus bookkeeping so keyboard delete doesn't strand the user
  */
-export function useAttachedImages(): UseAttachedImagesApi {
+export function useAttachedImages(
+  onKnowledgeImport?: KnowledgeImportFn,
+): UseAttachedImagesApi {
   const [images, setImages] = useState<AttachedImage[]>([]);
+  const importRef = useRef(onKnowledgeImport);
+  importRef.current = onKnowledgeImport;
+
   // Ref mirror so ``enqueue`` can see the authoritative length when invoked
   // multiple times in a single tick (rapid file selection, drag of many
   // files, paste storms). ``state`` is stale for that second + call.
@@ -114,14 +130,41 @@ export function useAttachedImages(): UseAttachedImagesApi {
     });
   }, []);
 
+  const importEncoded = useCallback(
+    (entryId: string, dataUrl: string, file: File) => {
+      const importer = importRef.current;
+      if (!importer) {
+        setEntry(entryId, { status: "imported" });
+        return;
+      }
+      setEntry(entryId, { status: "importing", dataUrl });
+      void importer(dataUrl, file).then(
+        (result) => {
+          setEntry(entryId, {
+            status: "imported",
+            knowledgePath: result.path,
+          });
+        },
+        () => {
+          setEntry(entryId, {
+            status: "error",
+            error: "import_failed",
+          });
+        },
+      );
+    },
+    [setEntry],
+  );
+
   const enqueue = useCallback(
     (files: Iterable<File>) => {
       const rejected: Array<{ file: File; reason: AttachmentError }> = [];
       const toAdd: AttachedImage[] = [];
-      let slot = MAX_IMAGES_PER_MESSAGE - imagesRef.current.length;
+      let slot = MAX_ATTACHMENTS_PER_MESSAGE - imagesRef.current.length;
 
       for (const file of files) {
-        if (!ACCEPTED_MIMES.has(file.type)) {
+        const kind = resolveAttachmentKind(file);
+        if (!kind) {
           rejected.push({ file, reason: "unsupported_type" });
           continue;
         }
@@ -133,7 +176,8 @@ export function useAttachedImages(): UseAttachedImagesApi {
         toAdd.push({
           id: uuid(),
           file,
-          previewUrl: URL.createObjectURL(file),
+          kind,
+          previewUrl: kind === "image" ? URL.createObjectURL(file) : undefined,
           status: "encoding",
         });
       }
@@ -142,15 +186,39 @@ export function useAttachedImages(): UseAttachedImagesApi {
         const next = [...imagesRef.current, ...toAdd];
         imagesRef.current = next;
         setImages(next);
-        // Fire the Worker after the commit so chips render first (good INP).
+        // Fire encoding after the commit so chips render first (good INP).
         for (const entry of toAdd) {
           queueMicrotask(() => {
+            if (entry.kind === "document") {
+              void encodeDocumentFile(entry.file).then(
+                (result) => {
+                  if (result.ok) {
+                    importEncoded(entry.id, result.dataUrl, entry.file);
+                    setEntry(entry.id, {
+                      encodedBytes: result.bytes,
+                      normalized: false,
+                    });
+                  } else {
+                    setEntry(entry.id, {
+                      status: "error",
+                      error: result.reason,
+                    });
+                  }
+                },
+                () => {
+                  setEntry(entry.id, {
+                    status: "error",
+                    error: "io",
+                  });
+                },
+              );
+              return;
+            }
             encodeImage(entry.file).then(
               (result) => {
                 if (result.ok) {
+                  importEncoded(entry.id, result.dataUrl, entry.file);
                   setEntry(entry.id, {
-                    status: "ready",
-                    dataUrl: result.dataUrl,
                     encodedBytes: result.bytes,
                     normalized: result.normalized,
                   });
@@ -173,7 +241,7 @@ export function useAttachedImages(): UseAttachedImagesApi {
       }
       return { rejected };
     },
-    [setEntry],
+    [importEncoded, setEntry],
   );
 
   const remove = useCallback((id: string) => {
@@ -182,10 +250,12 @@ export function useAttachedImages(): UseAttachedImagesApi {
       const idx = prev.findIndex((img) => img.id === id);
       if (idx === -1) return prev;
       const target = prev[idx];
-      try {
-        URL.revokeObjectURL(target.previewUrl);
-      } catch {
-        // No-op: previewUrl revocation is best-effort.
+      if (target.previewUrl) {
+        try {
+          URL.revokeObjectURL(target.previewUrl);
+        } catch {
+          // No-op: previewUrl revocation is best-effort.
+        }
       }
       const next = [...prev.slice(0, idx), ...prev.slice(idx + 1)];
       imagesRef.current = next;
@@ -200,6 +270,7 @@ export function useAttachedImages(): UseAttachedImagesApi {
   const clear = useCallback(() => {
     setImages((prev) => {
       for (const img of prev) {
+        if (!img.previewUrl) continue;
         try {
           URL.revokeObjectURL(img.previewUrl);
         } catch {
@@ -217,6 +288,7 @@ export function useAttachedImages(): UseAttachedImagesApi {
   useEffect(() => {
     return () => {
       for (const img of imagesRef.current) {
+        if (!img.previewUrl) continue;
         try {
           URL.revokeObjectURL(img.previewUrl);
         } catch {
@@ -227,7 +299,8 @@ export function useAttachedImages(): UseAttachedImagesApi {
   }, []);
 
   const encoding = images.some((img) => img.status === "encoding");
-  const full = images.length >= MAX_IMAGES_PER_MESSAGE;
+  const importing = images.some((img) => img.status === "importing");
+  const full = images.length >= MAX_ATTACHMENTS_PER_MESSAGE;
 
-  return { images, enqueue, remove, clear, encoding, full };
+  return { images, enqueue, remove, clear, encoding, importing, full };
 }

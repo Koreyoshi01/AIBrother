@@ -617,6 +617,8 @@
         }
       },
       "encoding": "Đang xử lý…",
+      "importing": "Đang nhập kho…",
+      "imported": "Đã vào kho tri thức",
       "remove": "Xóa tệp đính kèm",
       "normalizedSizeHint": "{{orig}} → {{current}} (tự động)",
       "imageRejected": {
@@ -625,6 +627,7 @@
         "magic_mismatch": "Tệp này không phải là một ảnh thực",
         "decode_failed": "Không thể giải mã ảnh này",
         "too_large": "Ảnh quá lớn — hãy thử ảnh nhỏ hơn",
+        "import_failed": "Không thể nhập vào kho tri thức",
         "io": "Không thể đọc tệp này"
       },
       "mentions": {

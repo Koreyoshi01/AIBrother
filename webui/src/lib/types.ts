@@ -193,6 +193,7 @@ export interface AIBrotherFile {
   category: string;
   category_label: string;
   content: string;
+  media_type?: string;
 }
 
 export interface AIBrotherAskResponse {
@@ -534,15 +535,27 @@ export type InboundEvent =
       goal_state: GoalStateWsPayload;
     }
   | { event: "session_updated"; chat_id: string; scope?: "metadata" | "thread" | string }
-  | { event: "error"; chat_id?: string; detail?: string };
+  | { event: "error"; chat_id?: string; detail?: string }
+  | {
+      event: "aibrother_imported";
+      request_id: string;
+      document: {
+        path: string;
+        title: string;
+        category: string;
+        category_label: string;
+        preview: string;
+      };
+    }
+  | {
+      event: "aibrother_import_failed";
+      request_id: string;
+      detail?: string;
+    };
 
-/** Base64-encoded image attached to an outbound ``message`` envelope.
- *
- * ``data_url`` must be a ``data:image/<png|jpeg|webp|gif>;base64,...`` string
- * — the server whitelists those MIME types and rejects everything else
- * (including SVG, to avoid an XSS surface). ``name`` is advisory: it's
- * preserved for the file on disk and surfaced as the placeholder label when
- * the session is replayed.
+/** ``data_url`` must be a ``data:<mime>;base64,...`` string. Images use
+ * ``image/<png|jpeg|webp|gif>``; documents use PDF / Office Open XML MIME
+ * types whitelisted by the websocket ingress path.
  */
 export interface OutboundMedia {
   data_url: string;
@@ -585,6 +598,12 @@ export interface WebuiThreadPersistedPayload {
 export type Outbound =
   | { type: "new_chat" }
   | { type: "attach"; chat_id: string }
+  | {
+      type: "aibrother_import";
+      request_id: string;
+      data_url: string;
+      name: string;
+    }
   | {
       type: "message";
       chat_id: string;

@@ -82,6 +82,20 @@ interface PendingNewChat {
   timer: ReturnType<typeof setTimeout>;
 }
 
+export interface KnowledgeImportResult {
+  path: string;
+  title: string;
+  category: string;
+  category_label: string;
+  preview: string;
+}
+
+interface PendingKnowledgeImport {
+  resolve: (result: KnowledgeImportResult) => void;
+  reject: (err: Error) => void;
+  timer: ReturnType<typeof setTimeout>;
+}
+
 export interface NanobotClientOptions {
   url: string;
   reconnect?: boolean;
@@ -119,6 +133,7 @@ export class NanobotClient {
   /** Latest ``goal_state`` snapshot per ``chat_id`` (multi-session isolation). */
   private goalStateByChatId = new Map<string, GoalStateWsPayload>();
   private pendingNewChat: PendingNewChat | null = null;
+  private pendingKnowledgeImports = new Map<string, PendingKnowledgeImport>();
   // Frames queued while the socket is not yet OPEN
   private sendQueue: Outbound[] = [];
   private reconnectAttempts = 0;
@@ -295,6 +310,31 @@ export class NanobotClient {
     });
   }
 
+  /** Import an encoded file into the AIBrother knowledge base. */
+  importToKnowledge(
+    dataUrl: string,
+    name: string,
+    timeoutMs: number = 60_000,
+  ): Promise<KnowledgeImportResult> {
+    const requestId =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `import-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    return new Promise<KnowledgeImportResult>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.pendingKnowledgeImports.delete(requestId);
+        reject(new Error("importToKnowledge timed out"));
+      }, timeoutMs);
+      this.pendingKnowledgeImports.set(requestId, { resolve, reject, timer });
+      this.queueSend({
+        type: "aibrother_import",
+        request_id: requestId,
+        data_url: dataUrl,
+        name,
+      });
+    });
+  }
+
   attach(chatId: string): void {
     this.knownChats.add(chatId);
     if (this.socket?.readyState === WS_OPEN) {
@@ -382,6 +422,34 @@ export class NanobotClient {
       return;
     }
 
+    if (parsed.event === "aibrother_imported") {
+      const requestId = (parsed as { request_id?: string }).request_id;
+      const document = (parsed as { document?: KnowledgeImportResult }).document;
+      if (requestId && document) {
+        const pending = this.pendingKnowledgeImports.get(requestId);
+        if (pending) {
+          clearTimeout(pending.timer);
+          this.pendingKnowledgeImports.delete(requestId);
+          pending.resolve(document);
+        }
+      }
+      return;
+    }
+
+    if (parsed.event === "aibrother_import_failed") {
+      const requestId = (parsed as { request_id?: string }).request_id;
+      const detail = (parsed as { detail?: string }).detail ?? "import failed";
+      if (requestId) {
+        const pending = this.pendingKnowledgeImports.get(requestId);
+        if (pending) {
+          clearTimeout(pending.timer);
+          this.pendingKnowledgeImports.delete(requestId);
+          pending.reject(new Error(detail));
+        }
+      }
+      return;
+    }
+
     if (parsed.event === "runtime_model_updated") {
       this.emitRuntimeModelUpdate(parsed.model_name || null, parsed.model_preset ?? null);
       return;
@@ -444,6 +512,11 @@ export class NanobotClient {
       clearTimeout(this.pendingNewChat.timer);
       this.pendingNewChat.reject(new Error("socket closed"));
       this.pendingNewChat = null;
+    }
+    for (const [requestId, pending] of this.pendingKnowledgeImports) {
+      clearTimeout(pending.timer);
+      pending.reject(new Error("socket closed"));
+      this.pendingKnowledgeImports.delete(requestId);
     }
     // Surface structured reasons *before* reconnect logic so the UI can
     // display the error even while the client transparently reconnects.

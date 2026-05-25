@@ -617,6 +617,8 @@
         }
       },
       "encoding": "處理中…",
+      "importing": "入庫中…",
+      "imported": "已入庫",
       "remove": "移除附件",
       "normalizedSizeHint": "{{orig}} → {{current}}（已自動壓縮）",
       "imageRejected": {
@@ -625,6 +627,7 @@
         "magic_mismatch": "檔案看起來不像真正的圖片",
         "decode_failed": "無法解碼這張圖片",
         "too_large": "圖片太大，請換一張小一點的",
+        "import_failed": "無法匯入知識庫",
         "io": "無法讀取這個檔案"
       },
       "mentions": {

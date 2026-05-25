@@ -10,7 +10,7 @@ import {
   fetchAIBrotherKnowledge,
   reindexAIBrotherKnowledge,
 } from "@/lib/api";
-import { resolveAIBrotherDocumentPath } from "@/lib/aibrother-links";
+import { resolveAIBrotherDocumentPath, aibrotherAssetUrl, rewriteKnowledgeMarkdownAssets } from "@/lib/aibrother-links";
 import type { AIBrotherDocument, AIBrotherFile } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -104,6 +104,16 @@ export function AIBrotherView({
     }
   }, [token]);
 
+  const pdfUrl = useMemo(() => {
+    if (!selected || selected.media_type !== "application/pdf") return null;
+    return aibrotherAssetUrl(selected.path, token);
+  }, [selected, token]);
+
+  const renderedContent = useMemo(() => {
+    if (!selected || selected.media_type === "application/pdf") return "";
+    return rewriteKnowledgeMarkdownAssets(selected.content, selected.path, token);
+  }, [selected, token]);
+
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
       <ThreadHeader
@@ -174,7 +184,15 @@ export function AIBrotherView({
                 <span>/</span>
                 <span className="font-mono">{selected.path}</span>
               </div>
-              <MarkdownText className="text-sm leading-7">{selected.content}</MarkdownText>
+              {pdfUrl ? (
+                <iframe
+                  src={pdfUrl}
+                  title={selected.title}
+                  className="h-[min(80vh,960px)] w-full rounded-lg border border-border/70 bg-muted/10"
+                />
+              ) : (
+                <MarkdownText className="text-sm leading-7">{renderedContent}</MarkdownText>
+              )}
             </article>
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-muted-foreground">

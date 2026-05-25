@@ -373,7 +373,20 @@ _VIDEO_MIME_ALLOWED: frozenset[str] = frozenset({
     "video/quicktime",
 })
 
-_UPLOAD_MIME_ALLOWED: frozenset[str] = _IMAGE_MIME_ALLOWED | _VIDEO_MIME_ALLOWED
+_DOCUMENT_MIME_ALLOWED: frozenset[str] = frozenset({
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "text/plain",
+})
+
+_MAX_DOCUMENTS_PER_MESSAGE = 4
+_MAX_DOCUMENT_BYTES = 10 * 1024 * 1024
+
+_UPLOAD_MIME_ALLOWED: frozenset[str] = (
+    _IMAGE_MIME_ALLOWED | _VIDEO_MIME_ALLOWED | _DOCUMENT_MIME_ALLOWED
+)
 
 _DATA_URL_MIME_RE = re.compile(r"^data:([^;]+);base64,", re.DOTALL)
 
@@ -710,6 +723,9 @@ class WebSocketChannel(BaseChannel):
         if got == "/api/aibrother/file":
             return self._handle_aibrother_file(request)
 
+        if got == "/api/aibrother/asset":
+            return self._handle_aibrother_asset(request)
+
         if got == "/api/aibrother/search":
             return self._handle_aibrother_search(request)
 
@@ -937,6 +953,41 @@ class WebSocketChannel(BaseChannel):
         except ValueError as exc:
             return _http_error(400, str(exc))
         return _http_json_response(payload)
+
+    def _handle_aibrother_asset(self, request: WsRequest) -> Response:
+        if not self._check_api_token(request):
+            return _http_error(401, "Unauthorized")
+        query = _parse_query(request.path)
+        path = _query_first(query, "path") or ""
+        try:
+            asset = _aibrother_index(get_workspace_path()).resolve_asset_path(path)
+        except FileNotFoundError:
+            return _http_error(404, "asset not found")
+        except ValueError as exc:
+            return _http_error(400, str(exc))
+        try:
+            body = asset.read_bytes()
+        except OSError:
+            return _http_error(500, "read error")
+        mime, _ = mimetypes.guess_type(asset.name)
+        if mime in (None, "application/octet-stream"):
+            if asset.suffix.lower() == ".pdf":
+                mime = "application/pdf"
+            else:
+                mime = "application/octet-stream"
+        elif not (mime.startswith("image/") or mime == "application/pdf"):
+            mime = "application/octet-stream"
+        extra_headers = [
+            ("Cache-Control", "private, max-age=86400"),
+            ("X-Content-Type-Options", "nosniff"),
+        ]
+        if mime == "application/pdf":
+            extra_headers.append(("Content-Disposition", f'inline; filename="{asset.name}"'))
+        return _http_response(
+            body,
+            content_type=mime,
+            extra_headers=extra_headers,
+        )
 
     def _handle_aibrother_search(self, request: WsRequest) -> Response:
         if not self._check_api_token(request):
@@ -1553,16 +1604,21 @@ class WebSocketChannel(BaseChannel):
         """
         image_count = 0
         video_count = 0
+        document_count = 0
         for item in media:
             mime = _extract_data_url_mime(item.get("data_url", "")) if isinstance(item, dict) else None
             if mime in _VIDEO_MIME_ALLOWED:
                 video_count += 1
             elif mime in _IMAGE_MIME_ALLOWED:
                 image_count += 1
+            elif mime in _DOCUMENT_MIME_ALLOWED:
+                document_count += 1
         if image_count > _MAX_IMAGES_PER_MESSAGE:
             return [], "too_many_images"
         if video_count > _MAX_VIDEOS_PER_MESSAGE:
             return [], "too_many_videos"
+        if document_count > _MAX_DOCUMENTS_PER_MESSAGE:
+            return [], "too_many_documents"
 
         media_dir = get_media_dir("websocket")
         paths: list[str] = []
@@ -1589,7 +1645,13 @@ class WebSocketChannel(BaseChannel):
             if mime not in _UPLOAD_MIME_ALLOWED:
                 return _abort("mime")
             is_video = mime in _VIDEO_MIME_ALLOWED
-            max_bytes = _MAX_VIDEO_BYTES if is_video else _MAX_IMAGE_BYTES
+            is_document = mime in _DOCUMENT_MIME_ALLOWED
+            if is_video:
+                max_bytes = _MAX_VIDEO_BYTES
+            elif is_document:
+                max_bytes = _MAX_DOCUMENT_BYTES
+            else:
+                max_bytes = _MAX_IMAGE_BYTES
             try:
                 saved = save_base64_data_url(
                     data_url, media_dir, max_bytes=max_bytes,
@@ -1687,7 +1749,103 @@ class WebSocketChannel(BaseChannel):
                 is_dm=False,
             )
             return
+        if t == "aibrother_import":
+            await self._handle_aibrother_import(connection, envelope)
+            return
         await self._send_event(connection, "error", detail=f"unknown type: {t!r}")
+
+    async def _handle_aibrother_import(
+        self,
+        connection: Any,
+        envelope: dict[str, Any],
+    ) -> None:
+        """Decode one uploaded file and index it into the AIBrother knowledge base."""
+        request_id = envelope.get("request_id")
+        if not isinstance(request_id, str) or not request_id.strip():
+            await self._send_event(connection, "error", detail="missing request_id")
+            return
+
+        data_url = envelope.get("data_url")
+        name = envelope.get("name")
+        if not isinstance(data_url, str) or not data_url:
+            await self._send_event(
+                connection,
+                "aibrother_import_failed",
+                request_id=request_id,
+                detail="missing data_url",
+            )
+            return
+        if not isinstance(name, str) or not name.strip():
+            name = "upload.bin"
+
+        mime = _extract_data_url_mime(data_url)
+        if mime is None:
+            await self._send_event(
+                connection,
+                "aibrother_import_failed",
+                request_id=request_id,
+                detail="unsupported_type",
+            )
+            return
+        if mime in _DOCUMENT_MIME_ALLOWED:
+            max_bytes = _MAX_DOCUMENT_BYTES
+        elif mime in _IMAGE_MIME_ALLOWED:
+            max_bytes = _MAX_IMAGE_BYTES
+        else:
+            await self._send_event(
+                connection,
+                "aibrother_import_failed",
+                request_id=request_id,
+                detail="unsupported_type",
+            )
+            return
+
+        import_dir = get_media_dir("websocket") / "_aibrother_import"
+        import_dir.mkdir(parents=True, exist_ok=True)
+        saved = save_base64_data_url(data_url, import_dir, max_bytes=max_bytes)
+        if saved is None:
+            await self._send_event(
+                connection,
+                "aibrother_import_failed",
+                request_id=request_id,
+                detail="decode",
+            )
+            return
+
+        saved_path = Path(saved)
+        try:
+            global _AIBROTHER_INDEX
+            index = KnowledgeIndex(get_workspace_path())
+            document = index.import_file(saved_path, original_name=name)
+            _AIBROTHER_INDEX = index
+        except FileNotFoundError:
+            await self._send_event(
+                connection,
+                "aibrother_import_failed",
+                request_id=request_id,
+                detail="not_found",
+            )
+            return
+        except ValueError as exc:
+            await self._send_event(
+                connection,
+                "aibrother_import_failed",
+                request_id=request_id,
+                detail=str(exc),
+            )
+            return
+        finally:
+            try:
+                saved_path.unlink(missing_ok=True)
+            except OSError as exc:
+                self.logger.warning("failed to unlink import temp {}: {}", saved_path, exc)
+
+        await self._send_event(
+            connection,
+            "aibrother_imported",
+            request_id=request_id,
+            document=document.to_dict(),
+        )
 
     async def stop(self) -> None:
         if not self._running:

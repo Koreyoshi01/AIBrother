@@ -79,3 +79,58 @@ export function resolveAIBrotherDocumentPath(
   const byName = documents.find((doc) => doc.path.toLowerCase().split("/").pop() === basename);
   return byName?.path ?? null;
 }
+
+/** Join a markdown-relative asset href against the document path inside ``knowledge/``. */
+export function joinKnowledgeAssetPath(docPath: string, href: string): string {
+  const docDir = docPath.replace(/\\/g, "/").replace(/\/[^/]+$/, "");
+  const normalized = href.replace(/\\/g, "/").trim();
+  if (normalized.toLowerCase().startsWith("knowledge/")) {
+    return collapseKnowledgePath(normalized);
+  }
+  return collapseKnowledgePath(`${docDir}/${normalized}`);
+}
+
+function collapseKnowledgePath(path: string): string {
+  const parts: string[] = [];
+  for (const part of path.replace(/\\/g, "/").split("/")) {
+    if (!part || part === ".") continue;
+    if (part === "..") {
+      parts.pop();
+      continue;
+    }
+    parts.push(part);
+  }
+  return parts.join("/");
+}
+
+export function aibrotherAssetUrl(
+  assetPath: string,
+  token: string,
+  base: string = "",
+): string {
+  const query = new URLSearchParams();
+  query.set("path", assetPath);
+  query.set("token", token);
+  return `${base}/api/aibrother/asset?${query.toString()}`;
+}
+
+const MARKDOWN_IMAGE_RE =
+  /!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
+
+/** Rewrite relative ``![alt](assets/foo.png)`` links to authenticated API URLs. */
+export function rewriteKnowledgeMarkdownAssets(
+  content: string,
+  docPath: string,
+  token: string,
+  base: string = "",
+): string {
+  return content.replace(MARKDOWN_IMAGE_RE, (full, alt: string, href: string) => {
+    const trimmed = href.trim();
+    if (/^(https?:|data:|\/api\/)/i.test(trimmed)) {
+      return full;
+    }
+    const assetPath = joinKnowledgeAssetPath(docPath, trimmed);
+    const url = aibrotherAssetUrl(assetPath, token, base);
+    return `![${alt}](${url})`;
+  });
+}

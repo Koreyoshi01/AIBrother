@@ -526,7 +526,7 @@
       "goalStateSheetTitle": "目标",
       "send": "发送消息",
       "stop": "停止响应",
-      "attachImage": "添加图片",
+      "attachImage": "添加附件",
       "imageMode": {
         "label": "图片生成",
         "toggle": "切换图片生成模式",
@@ -626,14 +626,17 @@
         "mcpDescription": "使用 @{{name}} 调用 MCP 服务"
       },
       "encoding": "处理中…",
+      "importing": "入库中…",
+      "imported": "已入库",
       "remove": "移除附件",
       "normalizedSizeHint": "{{orig}} → {{current}}（已自动压缩）",
       "imageRejected": {
         "unsupported_type": "不支持的文件类型",
-        "too_many_images": "每条消息最多 {{max}} 张图片",
+        "too_many_images": "每条消息最多 {{max}} 个附件",
         "magic_mismatch": "文件看起来不像真实的图片",
         "decode_failed": "无法解码这张图片",
         "too_large": "图片太大，请换一张小一点的",
+        "import_failed": "无法导入知识库",
         "io": "无法读取该文件"
       },
       "goalStateCloseAria": "关闭目标",

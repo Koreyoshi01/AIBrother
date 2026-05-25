@@ -180,7 +180,7 @@ describe("ThreadComposer", () => {
     expect(input.parentElement?.parentElement?.className).toContain("max-w-[49.5rem]");
     expect(input.parentElement?.parentElement?.className).toContain("rounded-[14px]");
     expect(input.parentElement?.parentElement?.className).toContain("shadow-[0_1px_6px_rgba(0,0,0,.04)]");
-    expect(screen.getByRole("button", { name: "Attach image" }).className).toContain("bg-card");
+    expect(screen.getByRole("button", { name: "Attach file" }).className).toContain("bg-card");
     expect(screen.getByRole("button", { name: "Send message" }).className).toContain("bg-primary");
   });
 

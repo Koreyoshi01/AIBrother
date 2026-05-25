@@ -617,6 +617,8 @@
         }
       },
       "encoding": "処理中…",
+      "importing": "ナレッジベースへ取り込み中…",
+      "imported": "ナレッジベースに保存済み",
       "remove": "添付を削除",
       "normalizedSizeHint": "{{orig}} → {{current}}（自動圧縮）",
       "imageRejected": {
@@ -625,6 +627,7 @@
         "magic_mismatch": "画像ファイルではないようです",
         "decode_failed": "この画像をデコードできません",
         "too_large": "画像が大きすぎます。小さいものを選んでください",
+        "import_failed": "ナレッジベースに取り込めませんでした",
         "io": "このファイルを読み込めません"
       },
       "mentions": {

@@ -3,9 +3,15 @@
 from __future__ import annotations
 
 import re
+import shutil
 import sqlite3
+import uuid
 from dataclasses import asdict, dataclass
+from datetime import UTC, datetime
 from pathlib import Path
+
+from nanobot.utils.document import extract_text
+from nanobot.utils.helpers import safe_filename
 
 
 _CATEGORY_LABELS = {
@@ -23,6 +29,10 @@ _CATEGORY_PRIORITY = {
     "public": 3,
     "cards": 4,
 }
+
+_ASSET_EXTENSIONS = frozenset({".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"})
+_KNOWLEDGE_DOC_EXTENSIONS = frozenset({".md", ".pdf"})
+_SERVEABLE_EXTENSIONS = _ASSET_EXTENSIONS | {".pdf"}
 
 
 @dataclass(frozen=True)
@@ -96,54 +106,183 @@ class KnowledgeIndex:
     def reindex(self) -> None:
         self._conn.execute("DELETE FROM chunks")
         for doc in self._markdown_files():
-            text = doc.read_text(encoding="utf-8", errors="replace")
-            title = _title_from_text(text, doc.stem)
-            category = _category_for(self.knowledge_dir, doc)
-            category_label = _CATEGORY_LABELS.get(category, category)
-            for line, chunk in _chunks(text):
-                self._conn.execute(
-                    """
-                    INSERT INTO chunks(path, title, category, category_label, line, content)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                    """,
-                    (
-                        _rel(doc, self.root),
-                        title,
-                        category,
-                        category_label,
-                        line,
-                        chunk,
-                    ),
-                )
+            self._index_text_file(doc)
+        for pdf in self._pdf_files():
+            self._index_pdf_file(pdf)
         self._conn.commit()
+
+    def _index_text_file(self, doc: Path) -> None:
+        text = doc.read_text(encoding="utf-8", errors="replace")
+        title = _title_from_text(text, doc.stem)
+        category = _category_for(self.knowledge_dir, doc)
+        category_label = _CATEGORY_LABELS.get(category, category)
+        for line, chunk in _chunks(text):
+            self._conn.execute(
+                """
+                INSERT INTO chunks(path, title, category, category_label, line, content)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    _rel(doc, self.root),
+                    title,
+                    category,
+                    category_label,
+                    line,
+                    chunk,
+                ),
+            )
+
+    def _index_pdf_file(self, pdf: Path) -> None:
+        extracted = extract_text(pdf)
+        if not extracted or extracted.startswith("[error:"):
+            return
+        title = _title_from_filename(pdf.stem)
+        category = _category_for(self.knowledge_dir, pdf)
+        category_label = _CATEGORY_LABELS.get(category, category)
+        for line, chunk in _chunks(extracted):
+            self._conn.execute(
+                """
+                INSERT INTO chunks(path, title, category, category_label, line, content)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    _rel(pdf, self.root),
+                    title,
+                    category,
+                    category_label,
+                    line,
+                    chunk,
+                ),
+            )
 
     def documents(self) -> list[KnowledgeDocument]:
         docs: list[KnowledgeDocument] = []
         for path in self._markdown_files():
-            text = path.read_text(encoding="utf-8", errors="replace")
-            category = _category_for(self.knowledge_dir, path)
-            docs.append(
-                KnowledgeDocument(
-                    path=_rel(path, self.root),
-                    title=_title_from_text(text, path.stem),
-                    category=category,
-                    category_label=_CATEGORY_LABELS.get(category, category),
-                    preview=_preview(text),
-                )
-            )
+            docs.append(self._document_for_path(path))
+        for path in self._pdf_files():
+            docs.append(self._document_for_path(path))
         return docs
+
+    def _document_for_path(self, path: Path) -> KnowledgeDocument:
+        category = _category_for(self.knowledge_dir, path)
+        if path.suffix.lower() == ".pdf":
+            extracted = extract_text(path)
+            preview = _preview(extracted) if extracted and not extracted.startswith("[error:") else "PDF 文档"
+            title = _title_from_filename(path.stem)
+        else:
+            text = path.read_text(encoding="utf-8", errors="replace")
+            preview = _preview(text)
+            title = _title_from_text(text, path.stem)
+        return KnowledgeDocument(
+            path=_rel(path, self.root),
+            title=title,
+            category=category,
+            category_label=_CATEGORY_LABELS.get(category, category),
+            preview=preview,
+        )
 
     def read_file(self, relative_path: str) -> dict[str, str]:
         path = self._resolve_knowledge_path(relative_path)
-        text = path.read_text(encoding="utf-8", errors="replace")
         category = _category_for(self.knowledge_dir, path)
+        if path.suffix.lower() == ".pdf":
+            return {
+                "path": _rel(path, self.root),
+                "title": _title_from_filename(path.stem),
+                "category": category,
+                "category_label": _CATEGORY_LABELS.get(category, category),
+                "content": "",
+                "media_type": "application/pdf",
+            }
+        text = path.read_text(encoding="utf-8", errors="replace")
         return {
             "path": _rel(path, self.root),
             "title": _title_from_text(text, path.stem),
             "category": category,
             "category_label": _CATEGORY_LABELS.get(category, category),
             "content": text,
+            "media_type": "text/markdown",
         }
+
+    def import_file(self, source: Path, *, original_name: str | None = None) -> KnowledgeDocument:
+        """Import an uploaded file into ``knowledge/group_knowledge/uploads``."""
+        if not isinstance(source, Path):
+            source = Path(source)
+        if not source.is_file():
+            raise FileNotFoundError(str(source))
+
+        display_name = original_name or source.name
+        ext = Path(display_name).suffix.lower()
+        uploads_dir = self.knowledge_dir / "group_knowledge" / "uploads"
+        assets_dir = uploads_dir / "assets"
+        uploads_dir.mkdir(parents=True, exist_ok=True)
+        assets_dir.mkdir(parents=True, exist_ok=True)
+
+        slug = _safe_slug(Path(display_name).stem)
+        suffix = uuid.uuid4().hex[:8]
+        imported_at = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
+
+        if ext in {".png", ".jpg", ".jpeg", ".gif", ".webp"}:
+            asset_name = safe_filename(f"{suffix}_{Path(display_name).name}")
+            asset_path = assets_dir / asset_name
+            shutil.copy2(source, asset_path)
+            asset_rel = f"assets/{asset_name}"
+            title = Path(display_name).stem.replace("_", " ").strip() or display_name
+            md_path = uploads_dir / f"{slug}_{suffix}.md"
+            md_path.write_text(
+                "\n".join(
+                    [
+                        f"# {title}",
+                        "",
+                        f"> 来源文件：{display_name} · 导入于 {imported_at}",
+                        "",
+                        f"![{display_name}]({asset_rel})",
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            stored_path = md_path
+        elif ext == ".pdf":
+            pdf_name = safe_filename(f"{slug}_{suffix}.pdf")
+            stored_path = uploads_dir / pdf_name
+            shutil.copy2(source, stored_path)
+        else:
+            extracted = extract_text(source)
+            if extracted is None:
+                raise ValueError(f"unsupported file type: {display_name}")
+            if extracted.startswith("[error:"):
+                raise ValueError(extracted)
+            title = Path(display_name).stem.replace("_", " ").strip() or display_name
+            stored_path = uploads_dir / f"{slug}_{suffix}.md"
+            stored_path.write_text(
+                "\n".join(
+                    [
+                        f"# {title}",
+                        "",
+                        f"> 来源文件：{display_name} · 导入于 {imported_at}",
+                        "",
+                        extracted.strip(),
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+        self.reindex()
+        return self._document_for_path(stored_path)
+
+    def resolve_asset_path(self, relative_path: str) -> Path:
+        """Resolve a knowledge asset path and ensure it stays inside ``knowledge/``."""
+        cleaned = relative_path.replace("\\", "/").lstrip("/")
+        path = (self.root / cleaned).resolve(strict=False)
+        knowledge_root = self.knowledge_dir.resolve(strict=False)
+        if not path.is_relative_to(knowledge_root):
+            raise ValueError("path must stay inside aibrother/knowledge")
+        if not path.is_file():
+            raise FileNotFoundError(relative_path)
+        if path.suffix.lower() not in _SERVEABLE_EXTENSIONS:
+            raise ValueError(f"unsupported asset type: {path.suffix}")
+        return path
 
     def search(self, query: str, *, limit: int = 8) -> list[EvidenceItem]:
         query = query.strip()
@@ -260,13 +399,23 @@ class KnowledgeIndex:
             if path.is_file() and not any(part.startswith(".") for part in path.parts)
         )
 
+    def _pdf_files(self) -> list[Path]:
+        uploads = self.knowledge_dir / "group_knowledge" / "uploads"
+        if not uploads.is_dir():
+            return []
+        return sorted(
+            path
+            for path in uploads.rglob("*.pdf")
+            if path.is_file() and not any(part.startswith(".") for part in path.parts)
+        )
+
     def _resolve_knowledge_path(self, relative_path: str) -> Path:
         cleaned = relative_path.replace("\\", "/").lstrip("/")
         path = (self.root / cleaned).resolve(strict=False)
         knowledge_root = self.knowledge_dir.resolve(strict=False)
         if not path.is_relative_to(knowledge_root):
             raise ValueError("path must stay inside aibrother/knowledge")
-        if not path.is_file() or path.suffix.lower() != ".md":
+        if not path.is_file() or path.suffix.lower() not in _KNOWLEDGE_DOC_EXTENSIONS:
             raise FileNotFoundError(relative_path)
         return path
 
@@ -300,7 +449,12 @@ def _title_from_text(text: str, fallback: str) -> str:
         stripped = line.strip()
         if stripped.startswith("#"):
             return stripped.lstrip("#").strip() or fallback
-    return fallback.replace("_", " ").strip()
+    return _title_from_filename(fallback)
+
+
+def _title_from_filename(stem: str) -> str:
+    cleaned = re.sub(r"_[0-9a-f]{8}$", "", stem, flags=re.IGNORECASE)
+    return cleaned.replace("_", " ").replace("-", " ").strip() or stem
 
 
 def _category_for(knowledge_dir: Path, path: Path) -> str:
@@ -337,3 +491,9 @@ def _like_terms(query: str) -> list[str]:
 
 def _clean_snippet(snippet: str) -> str:
     return re.sub(r"\s+", " ", snippet).strip()
+
+
+def _safe_slug(name: str) -> str:
+    cleaned = re.sub(r"[^\w\u4e00-\u9fff-]+", "-", name.strip(), flags=re.UNICODE)
+    cleaned = re.sub(r"-{2,}", "-", cleaned).strip("-")
+    return cleaned[:80] or "upload"

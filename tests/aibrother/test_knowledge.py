@@ -1,5 +1,6 @@
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 from nanobot.aibrother.knowledge import KnowledgeIndex, resolve_aibrother_root
 
@@ -33,6 +34,78 @@ class AIBrotherKnowledgeTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             index.read_file("../config.json")
+
+    def test_import_file_writes_markdown_and_indexes(self) -> None:
+        import tempfile
+
+        root = Path(tempfile.mkdtemp())
+        (root / "knowledge" / "group_knowledge" / "uploads").mkdir(parents=True)
+        index = KnowledgeIndex(root)
+        source = root / "sample.txt"
+        source.write_text("课题组测试文档内容", encoding="utf-8")
+
+        document = index.import_file(source, original_name="实验记录.txt")
+
+        self.assertIn("uploads/", document.path)
+        self.assertTrue(document.path.endswith(".md"))
+        md_path = root / document.path
+        self.assertTrue(md_path.is_file())
+        text = md_path.read_text(encoding="utf-8")
+        self.assertIn("课题组测试文档内容", text)
+        self.assertIn("实验记录.txt", text)
+        results = index.search("课题组测试文档", limit=3)
+        self.assertTrue(any(document.path in item.path for item in results))
+
+    def test_resolve_asset_path_serves_uploaded_image(self) -> None:
+        import tempfile
+
+        root = Path(tempfile.mkdtemp())
+        uploads = root / "knowledge" / "group_knowledge" / "uploads"
+        assets = uploads / "assets"
+        assets.mkdir(parents=True)
+        png = assets / "demo.png"
+        png.write_bytes(b"\x89PNG\r\n")
+        index = KnowledgeIndex(root)
+
+        resolved = index.resolve_asset_path("knowledge/group_knowledge/uploads/assets/demo.png")
+
+        self.assertEqual(resolved, png.resolve())
+
+    def test_import_pdf_stores_binary_and_indexes_text(self) -> None:
+        import tempfile
+
+        root = Path(tempfile.mkdtemp())
+        (root / "knowledge" / "group_knowledge" / "uploads").mkdir(parents=True)
+        index = KnowledgeIndex(root)
+        source = root / "paper.pdf"
+        source.write_bytes(b"%PDF-1.4 paper")
+
+        with patch(
+            "nanobot.aibrother.knowledge.extract_text",
+            return_value="Generative Pre-Trained Diffusion 时间序列",
+        ):
+            document = index.import_file(source, original_name="2406.02212v1.pdf")
+
+        self.assertTrue(document.path.endswith(".pdf"))
+        self.assertTrue((root / document.path).is_file())
+        self.assertNotIn("--- Page 1 ---", (root / document.path).read_bytes().decode("latin-1"))
+        results = index.search("时间序列", limit=3)
+        self.assertTrue(any(document.path in item.path for item in results))
+
+    def test_read_file_marks_pdf_documents(self) -> None:
+        import tempfile
+
+        root = Path(tempfile.mkdtemp())
+        uploads = root / "knowledge" / "group_knowledge" / "uploads"
+        uploads.mkdir(parents=True)
+        pdf = uploads / "demo_abcd1234.pdf"
+        pdf.write_bytes(b"%PDF-1.4")
+        index = KnowledgeIndex(root)
+
+        payload = index.read_file("knowledge/group_knowledge/uploads/demo_abcd1234.pdf")
+
+        self.assertEqual(payload["media_type"], "application/pdf")
+        self.assertEqual(payload["content"], "")
 
 
 if __name__ == "__main__":

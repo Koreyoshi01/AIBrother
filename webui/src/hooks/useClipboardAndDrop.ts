@@ -1,5 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 
+import { resolveAttachmentKind } from "@/lib/fileAttach";
+
 /** Extract image ``File``s from a paste / drop event.
  *
  * Deliberate behaviour:
@@ -25,8 +27,8 @@ export function extractImageFilesFromPaste(
   return files;
 }
 
-/** Extract dropped image files, mirroring ``extractImageFilesFromPaste``. */
-export function extractImageFilesFromDrop(
+/** Extract dropped attachable files (images + documents). */
+export function extractAttachableFilesFromDrop(
   event: DragEvent | React.DragEvent,
 ): File[] {
   const dt = (event as DragEvent).dataTransfer
@@ -34,9 +36,18 @@ export function extractImageFilesFromDrop(
   if (!dt) return [];
   const files: File[] = [];
   for (const item of Array.from(dt.files)) {
-    if (item.type.startsWith("image/")) files.push(item);
+    if (resolveAttachmentKind(item)) files.push(item);
   }
   return files;
+}
+
+/** Extract dropped image files, mirroring ``extractImageFilesFromPaste``. */
+export function extractImageFilesFromDrop(
+  event: DragEvent | React.DragEvent,
+): File[] {
+  return extractAttachableFilesFromDrop(event).filter(
+    (file) => resolveAttachmentKind(file) === "image",
+  );
 }
 
 export interface UseClipboardAndDropApi {
@@ -99,7 +110,7 @@ export function useClipboardAndDrop(
     (event: React.DragEvent) => {
       dragDepth.current = 0;
       setIsDragging(false);
-      const files = extractImageFilesFromDrop(event);
+      const files = extractAttachableFilesFromDrop(event);
       if (files.length === 0) return;
       event.preventDefault();
       onImageFiles(files);

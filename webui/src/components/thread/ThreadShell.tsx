@@ -168,6 +168,10 @@ export function ThreadShell({
     version: historyVersion,
   } = useSessionHistory(historyKey);
   const { client, modelName, token } = useClient();
+  const importToKnowledge = useCallback(
+    (dataUrl: string, file: File) => client.importToKnowledge(dataUrl, file.name),
+    [client],
+  );
   const [booting, setBooting] = useState(false);
   const [slashCommands, setSlashCommands] = useState<SlashCommand[]>([]);
   const [cliApps, setCliApps] = useState<CliAppInfo[]>([]);
@@ -530,6 +534,7 @@ export function ThreadShell({
           runStartedAt={runStartedAt}
           goalState={goalState}
           prefillDraft={showHeroComposer ? composerPrefill : null}
+          importToKnowledge={importToKnowledge}
         />
       ) : (
         <ThreadComposer
@@ -553,6 +558,7 @@ export function ThreadShell({
           runStartedAt={runStartedAt}
           goalState={goalState}
           prefillDraft={composerPrefill}
+          importToKnowledge={importToKnowledge}
         />
       )}
       {showHeroComposer ? quickActions : null}

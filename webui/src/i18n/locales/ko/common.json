@@ -617,6 +617,8 @@
         }
       },
       "encoding": "처리 중…",
+      "importing": "지식베이스에 추가 중…",
+      "imported": "지식베이스에 저장됨",
       "remove": "첨부 제거",
       "normalizedSizeHint": "{{orig}} → {{current}} (자동 압축)",
       "imageRejected": {
@@ -625,6 +627,7 @@
         "magic_mismatch": "이미지 파일이 아닌 것 같습니다",
         "decode_failed": "이 이미지를 디코딩할 수 없습니다",
         "too_large": "이미지가 너무 큽니다. 더 작은 걸로 시도해 주세요",
+        "import_failed": "지식베이스에 가져올 수 없습니다",
         "io": "이 파일을 읽을 수 없습니다"
       },
       "mentions": {

@@ -28,6 +28,7 @@ import {
   CircleHelp,
   History,
   ImageIcon,
+  FileText,
   Loader2,
   Plus,
   RotateCw,
@@ -47,9 +48,11 @@ import {
   useAttachedImages,
   type AttachedImage,
   type AttachmentError,
+  type KnowledgeImportFn,
   MAX_IMAGES_PER_MESSAGE,
 } from "@/hooks/useAttachedImages";
-import { useClipboardAndDrop } from "@/hooks/useClipboardAndDrop";
+import { useClipboardAndDrop, extractImageFilesFromPaste } from "@/hooks/useClipboardAndDrop";
+import { ACCEPT_ATTR } from "@/lib/fileAttach";
 import type { SendImage, SendOptions } from "@/hooks/useNanobotStream";
 import type {
   CliAppInfo,
@@ -68,7 +71,6 @@ import { cn } from "@/lib/utils";
 
 /** ``<input accept>``: aligned with the server's MIME whitelist. SVG is
  * deliberately excluded to avoid an embedded-script XSS surface. */
-const ACCEPT_ATTR = "image/png,image/jpeg,image/webp,image/gif";
 
 function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`;
@@ -97,6 +99,8 @@ interface ThreadComposerProps {
   goalState?: GoalStateWsPayload;
   /** Fill the input without sending (e.g. welcome quick actions). */
   prefillDraft?: { text: string; id: number } | null;
+  /** Import encoded attachments into the AIBrother knowledge base. */
+  importToKnowledge?: KnowledgeImportFn;
 }
 
 const COMMAND_ICONS: Record<string, LucideIcon> = {
@@ -478,6 +482,7 @@ export function ThreadComposer({
   runStartedAt = null,
   goalState,
   prefillDraft = null,
+  importToKnowledge,
 }: ThreadComposerProps) {
   const { t } = useTranslation();
   const [value, setValue] = useState("");
@@ -513,8 +518,8 @@ export function ThreadComposer({
       ? t("thread.composer.imageMode.placeholder")
       : placeholder ?? t("thread.composer.placeholderThread");
 
-  const { images, enqueue, remove, clear, encoding, full } =
-    useAttachedImages();
+  const { images, enqueue, remove, clear, encoding, importing, full } =
+    useAttachedImages(importToKnowledge);
 
   const formatRejection = useCallback(
     (reason: AttachmentError): string => {
@@ -554,19 +559,14 @@ export function ThreadComposer({
     return () => cancelAnimationFrame(id);
   }, [disabled]);
 
-  const readyImages = useMemo(
-    () => images.filter((img): img is AttachedImage & { dataUrl: string } =>
-      img.status === "ready" && typeof img.dataUrl === "string",
-    ),
-    [images],
-  );
   const hasErrors = images.some((img) => img.status === "error");
 
   const canSend =
     !disabled
     && !encoding
+    && !importing
     && !hasErrors
-    && (value.trim().length > 0 || readyImages.length > 0);
+    && value.trim().length > 0;
 
   const slashQuery = useMemo(() => {
     if (disabled || slashMenuDismissed || !value.startsWith("/")) return null;
@@ -916,20 +916,6 @@ export function ThreadComposer({
   const submit = useCallback(() => {
     if (!canSend) return;
     const trimmed = value.trim();
-    // Share the same normalized ``data:`` URL with both the wire payload and
-    // the optimistic bubble preview: data URLs are self-contained (no blob
-    // lifetime, safe under React StrictMode double-mount) and keep the
-    // bubble in sync with whatever the backend actually sees.
-    const payload: SendImage[] | undefined =
-      readyImages.length > 0
-        ? readyImages.map((img) => ({
-            media: {
-              data_url: img.dataUrl,
-              name: img.file.name,
-            },
-            preview: { url: img.dataUrl, name: img.file.name },
-          }))
-        : undefined;
     const attachedCliApps = activeCliMentionApps.map(cliAppMentionPayload);
     const attachedMcpPresets = activeMcpPresetMentions.map(mcpPresetMentionPayload);
     const options: SendOptions | undefined =
@@ -947,11 +933,9 @@ export function ThreadComposer({
             ...(attachedMcpPresets.length > 0 ? { mcpPresets: attachedMcpPresets } : {}),
           }
         : undefined;
-    onSend(trimmed, payload, options);
+    onSend(trimmed, undefined, options);
     setValue("");
     setInlineError(null);
-    // Bubble owns the data URL copy; safe to revoke every staged blob
-    // preview here without affecting the rendered message.
     clear();
     setSlashMenuDismissed(false);
     setCliAppMenuDismissed(false);
@@ -965,7 +949,6 @@ export function ThreadComposer({
     imageAspectRatio,
     imageMode,
     onSend,
-    readyImages,
     resizeTextarea,
     value,
   ]);
@@ -1134,6 +1117,8 @@ export function ThreadComposer({
                 image={img}
                 labelRemove={t("thread.composer.remove")}
                 labelEncoding={t("thread.composer.encoding")}
+                labelImporting={t("thread.composer.importing")}
+                labelImported={t("thread.composer.imported")}
                 normalizedHint={(orig, current) =>
                   t("thread.composer.normalizedSizeHint", {
                     orig: formatBytes(orig),
@@ -1735,6 +1720,8 @@ interface AttachmentChipProps {
   image: AttachedImage;
   labelRemove: string;
   labelEncoding: string;
+  labelImporting: string;
+  labelImported: string;
   normalizedHint: (origBytes: number, currentBytes: number) => string;
   formatError: (reason: AttachmentError) => string;
   onRemove: () => void;
@@ -1746,6 +1733,8 @@ function AttachmentChip({
   image,
   labelRemove,
   labelEncoding,
+  labelImporting,
+  labelImported,
   normalizedHint,
   formatError,
   onRemove,
@@ -1753,13 +1742,19 @@ function AttachmentChip({
   registerRef,
 }: AttachmentChipProps) {
   const sizeLabel =
-    image.status === "ready" && image.normalized && image.encodedBytes
-      ? normalizedHint(image.file.size, image.encodedBytes)
-      : formatBytes(image.file.size);
+    image.status === "imported"
+      ? labelImported
+      : image.status === "importing"
+        ? labelImporting
+        : image.normalized && image.encodedBytes
+          ? normalizedHint(image.file.size, image.encodedBytes)
+          : formatBytes(image.file.size);
   const tone =
     image.status === "error"
       ? "border-destructive/40 bg-destructive/5 text-destructive"
-      : "border-border/70 bg-muted/60";
+      : image.status === "imported"
+        ? "border-emerald-500/35 bg-emerald-500/8"
+        : "border-border/70 bg-muted/60";
 
   return (
     <div
@@ -1771,7 +1766,11 @@ function AttachmentChip({
       data-testid="composer-chip"
     >
       <div className="relative h-10 w-10 overflow-hidden rounded-md bg-background">
-        {image.previewUrl ? (
+        {image.kind === "document" ? (
+          <div className="flex h-full w-full items-center justify-center bg-muted/40">
+            <FileText className="h-4 w-4 text-muted-foreground" aria-hidden />
+          </div>
+        ) : image.previewUrl ? (
           <img
             src={image.previewUrl}
             alt=""
@@ -1785,12 +1784,20 @@ function AttachmentChip({
             <ImageIcon className="h-4 w-4 text-muted-foreground" aria-hidden />
           </div>
         )}
-        {image.status === "encoding" ? (
+        {image.status === "encoding" || image.status === "importing" ? (
           <div
             className="absolute inset-0 flex items-center justify-center bg-background/60"
-            aria-label={labelEncoding}
+            aria-label={image.status === "importing" ? labelImporting : labelEncoding}
           >
             <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden />
+          </div>
+        ) : null}
+        {image.status === "imported" ? (
+          <div
+            className="absolute inset-0 flex items-center justify-center bg-emerald-500/15"
+            aria-label={labelImported}
+          >
+            <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" aria-hidden />
           </div>
         ) : null}
       </div>

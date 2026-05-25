@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ThreadComposer } from "@/components/thread/ThreadComposer";
 import type { EncodeResponse } from "@/lib/imageEncode";
+import type { KnowledgeImportFn } from "@/hooks/useAttachedImages";
 
 const encodeImage = vi.fn<(file: File) => Promise<EncodeResponse>>();
 
@@ -19,6 +20,20 @@ vi.mock("@/lib/imageEncode", async (importOriginal) => {
     encodeImage: (file: File) => encodeImage(file),
   };
 });
+
+function renderComposer(onSend = vi.fn()) {
+  const importToKnowledge = vi.fn<KnowledgeImportFn>().mockResolvedValue({
+    path: "knowledge/group_knowledge/uploads/test.md",
+    title: "test",
+    category: "group_knowledge",
+    category_label: "组内经验",
+    preview: "preview",
+  });
+  render(
+    <ThreadComposer onSend={onSend} importToKnowledge={importToKnowledge} />,
+  );
+  return { importToKnowledge };
+}
 
 function pngFile(name = "a.png", size = 10) {
   return new File([new Uint8Array(size)], name, { type: "image/png" });
@@ -39,7 +54,6 @@ function resolveReady(file: File): EncodeResponse {
 beforeEach(() => {
   encodeImage.mockReset();
   let id = 0;
-  // Tests never read the preview URL contents so a stable blob: stub is fine.
   if (!(globalThis.URL as unknown as { createObjectURL?: unknown }).createObjectURL) {
     (globalThis.URL as unknown as { createObjectURL: (b: Blob) => string }).createObjectURL =
       () => `blob:mock/${++id}`;
@@ -51,12 +65,11 @@ beforeEach(() => {
 });
 
 describe("ThreadComposer — image attachments", () => {
-  it("attaches a picked image and includes its data url on send", async () => {
-    const file = pngFile("a.png");
-    encodeImage.mockResolvedValueOnce(resolveReady(file));
+  it("imports a picked PDF into the knowledge base and sends text only", async () => {
+    const file = new File(["%PDF-1.4"], "report.pdf", { type: "application/pdf" });
     const onSend = vi.fn();
 
-    render(<ThreadComposer onSend={onSend} />);
+    const { importToKnowledge } = renderComposer(onSend);
 
     const input = screen
       .getByLabelText(/message input/i)
@@ -71,6 +84,77 @@ describe("ThreadComposer — image attachments", () => {
       expect(screen.getByTestId("composer-chip")).toBeInTheDocument(),
     );
 
+    await waitFor(() => {
+      expect(importToKnowledge).toHaveBeenCalledWith(
+        expect.stringContaining("data:application/pdf;base64,"),
+        file,
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/已入库|In knowledge base/i)).toBeInTheDocument();
+    });
+
+    const textarea = screen.getByLabelText(/message input/i);
+    fireEvent.change(textarea, { target: { value: "请总结这份 PDF" } });
+    fireEvent.keyDown(textarea, { key: "Enter" });
+
+    expect(onSend).toHaveBeenCalledTimes(1);
+    const [content, attachments] = onSend.mock.calls[0];
+    expect(content).toBe("请总结这份 PDF");
+    expect(attachments).toBeUndefined();
+  });
+
+  it("imports a picked TXT file into the knowledge base", async () => {
+    const file = new File(["课题组实验记录"], "notes.txt", { type: "text/plain" });
+    const onSend = vi.fn();
+    const { importToKnowledge } = renderComposer(onSend);
+
+    const input = screen
+      .getByLabelText(/message input/i)
+      .closest("form")!
+      .querySelector('input[type="file"]') as HTMLInputElement;
+
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+
+    await waitFor(() =>
+      expect(screen.getByTestId("composer-chip")).toBeInTheDocument(),
+    );
+
+    await waitFor(() => {
+      expect(importToKnowledge).toHaveBeenCalledWith(
+        expect.stringContaining("data:text/plain;base64,"),
+        file,
+      );
+    });
+  });
+
+  it("imports a picked image into the knowledge base and sends text only", async () => {
+    const file = pngFile("a.png");
+    encodeImage.mockResolvedValueOnce(resolveReady(file));
+    const onSend = vi.fn();
+
+    const { importToKnowledge } = renderComposer(onSend);
+
+    const input = screen
+      .getByLabelText(/message input/i)
+      .closest("form")!
+      .querySelector('input[type="file"]') as HTMLInputElement;
+
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+
+    await waitFor(() =>
+      expect(screen.getByTestId("composer-chip")).toBeInTheDocument(),
+    );
+
+    await waitFor(() => {
+      expect(importToKnowledge).toHaveBeenCalled();
+    });
+
     const textarea = screen.getByLabelText(/message input/i);
     fireEvent.change(textarea, { target: { value: "hi" } });
     fireEvent.keyDown(textarea, { key: "Enter" });
@@ -78,12 +162,10 @@ describe("ThreadComposer — image attachments", () => {
     expect(onSend).toHaveBeenCalledTimes(1);
     const [content, images] = onSend.mock.calls[0];
     expect(content).toBe("hi");
-    expect(images).toHaveLength(1);
-    expect(images[0].media.data_url).toContain("data:image/png;base64,");
-    expect(images[0].media.name).toBe("a.png");
+    expect(images).toBeUndefined();
   });
 
-  it("blocks send while an image is still encoding", async () => {
+  it("blocks send while an attachment is still encoding", async () => {
     const file = pngFile("slow.png");
     let resolveEncode: (r: EncodeResponse) => void = () => {};
     encodeImage.mockReturnValueOnce(
@@ -93,7 +175,7 @@ describe("ThreadComposer — image attachments", () => {
     );
     const onSend = vi.fn();
 
-    render(<ThreadComposer onSend={onSend} />);
+    const { importToKnowledge } = renderComposer(onSend);
 
     const fileInput = screen
       .getByLabelText(/message input/i)
@@ -113,13 +195,16 @@ describe("ThreadComposer — image attachments", () => {
       resolveEncode(resolveReady(file));
       await Promise.resolve();
     });
+
+    await waitFor(() => expect(importToKnowledge).toHaveBeenCalled());
+
     fireEvent.keyDown(textarea, { key: "Enter" });
     expect(onSend).toHaveBeenCalledTimes(1);
   });
 
   it("rejects a non-image paste silently without adding a chip", async () => {
     const onSend = vi.fn();
-    render(<ThreadComposer onSend={onSend} />);
+    renderComposer(onSend);
     const textarea = screen.getByLabelText(/message input/i);
 
     fireEvent.paste(textarea, {
@@ -150,7 +235,7 @@ describe("ThreadComposer — image attachments", () => {
     } as EncodeResponse);
     const onSend = vi.fn();
 
-    render(<ThreadComposer onSend={onSend} />);
+    const { importToKnowledge } = renderComposer(onSend);
     const fileInput = screen
       .getByLabelText(/message input/i)
       .closest("form")!

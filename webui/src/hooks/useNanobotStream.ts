@@ -309,6 +309,7 @@ function findFileEditTraceIndex(
 export interface SendImage {
   media: OutboundMedia;
   preview: UIImage;
+  kind?: "image" | "document";
 }
 
 export interface SendOptions {
@@ -878,7 +879,20 @@ export function useNanobotStream(
       if (!hasImages && !content.trim()) return;
 
       flushPendingStreamEvents();
-      const previews = hasImages ? images!.map((i) => i.preview) : undefined;
+      const imagePreviews = hasImages
+        ? images!
+            .filter((item) => !item.kind || item.kind === "image")
+            .map((item) => item.preview)
+        : undefined;
+      const fileMedia = hasImages
+        ? images!
+            .filter((item) => item.kind === "document")
+            .map((item) => ({
+              kind: "file" as const,
+              name: item.preview.name,
+              url: item.preview.url,
+            }))
+        : undefined;
       setMessages((prev) => {
         buffer.current = null;
         activeAssistantRef.current = null;
@@ -891,7 +905,8 @@ export function useNanobotStream(
             role: "user",
             content,
             createdAt: Date.now(),
-            ...(previews ? { images: previews } : {}),
+            ...(imagePreviews?.length ? { images: imagePreviews } : {}),
+            ...(fileMedia?.length ? { media: fileMedia } : {}),
             ...(options?.cliApps?.length ? { cliApps: options.cliApps } : {}),
             ...(options?.mcpPresets?.length ? { mcpPresets: options.mcpPresets } : {}),
           },

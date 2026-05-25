@@ -617,6 +617,8 @@
         }
       },
       "encoding": "Memproses…",
+      "importing": "Mengimpor…",
+      "imported": "Sudah di basis pengetahuan",
       "remove": "Hapus lampiran",
       "normalizedSizeHint": "{{orig}} → {{current}} (auto)",
       "imageRejected": {
@@ -625,6 +627,7 @@
         "magic_mismatch": "File ini tampaknya bukan gambar asli",
         "decode_failed": "Tidak dapat mendekode gambar ini",
         "too_large": "Gambar terlalu besar — coba yang lebih kecil",
+        "import_failed": "Tidak dapat mengimpor ke basis pengetahuan",
         "io": "Tidak dapat membaca file ini"
       },
       "mentions": {

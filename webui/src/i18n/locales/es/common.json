@@ -617,6 +617,8 @@
         }
       },
       "encoding": "Procesando…",
+      "importing": "Importando…",
+      "imported": "En la base de conocimiento",
       "remove": "Quitar adjunto",
       "normalizedSizeHint": "{{orig}} → {{current}} (auto)",
       "imageRejected": {
@@ -625,6 +627,7 @@
         "magic_mismatch": "El archivo no parece una imagen real",
         "decode_failed": "No se pudo decodificar esta imagen",
         "too_large": "Imagen demasiado grande — prueba una más pequeña",
+        "import_failed": "No se pudo importar a la base de conocimiento",
         "io": "No se pudo leer este archivo"
       },
       "mentions": {

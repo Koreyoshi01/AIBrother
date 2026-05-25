@@ -527,7 +527,7 @@
       "goalStateCloseAria": "Close goal",
       "send": "Send message",
       "stop": "Stop response",
-      "attachImage": "Attach image",
+      "attachImage": "Attach file",
       "imageMode": {
         "label": "Image Generation",
         "toggle": "Toggle image generation mode",
@@ -627,14 +627,17 @@
         "mcpDescription": "Use @{{name}} as an MCP server"
       },
       "encoding": "Encoding…",
+      "importing": "Importing…",
+      "imported": "In knowledge base",
       "remove": "Remove attachment",
       "normalizedSizeHint": "{{orig}} → {{current}} (auto)",
       "imageRejected": {
         "unsupported_type": "Unsupported file type",
-        "too_many_images": "Max {{max}} images per message",
+        "too_many_images": "Max {{max}} attachments per message",
         "magic_mismatch": "File doesn't look like a real image",
         "decode_failed": "Couldn't decode this image",
         "too_large": "Image is too large — try a smaller one",
+        "import_failed": "Couldn't import into knowledge base",
         "io": "Couldn't read this file"
       },
       "sendLabel": "Send"

@@ -263,14 +263,14 @@ async def test_message_rejected_on_oversize_payload(tmp_path) -> None:
 
 
 @pytest.mark.asyncio
-async def test_message_rejected_on_non_image_mime(tmp_path) -> None:
+async def test_message_rejected_on_unsupported_mime(tmp_path) -> None:
     channel = _make_channel()
     mock_conn = AsyncMock()
     envelope = {
         "type": "message",
         "chat_id": "abc123",
-        "content": "pdf?",
-        "media": [{"data_url": _data_url("application/pdf", b"%PDF-1.4")}],
+        "content": "zip?",
+        "media": [{"data_url": _data_url("application/zip", b"PK\x03\x04")}],
     }
 
     with patch(
@@ -282,6 +282,29 @@ async def test_message_rejected_on_non_image_mime(tmp_path) -> None:
     err = json.loads(mock_conn.send.call_args[0][0])
     assert err["detail"] == "image_rejected"
     assert err["reason"] == "mime"
+
+
+@pytest.mark.asyncio
+async def test_message_accepts_pdf_attachment(tmp_path) -> None:
+    channel = _make_channel()
+    mock_conn = AsyncMock()
+    envelope = {
+        "type": "message",
+        "chat_id": "abc123",
+        "content": "summarize this pdf",
+        "media": [{"data_url": _data_url("application/pdf", b"%PDF-1.4"), "name": "report.pdf"}],
+    }
+
+    with patch(
+        "nanobot.channels.websocket.get_media_dir", return_value=tmp_path
+    ):
+        await channel._dispatch_envelope(mock_conn, "client-1", envelope)
+
+    channel._handle_message.assert_awaited_once()
+    paths = channel._handle_message.call_args.kwargs["media"]
+    assert len(paths) == 1
+    assert Path(paths[0]).suffix == ".pdf"
+    mock_conn.send.assert_not_awaited()
 
 
 @pytest.mark.asyncio
@@ -404,7 +427,7 @@ async def test_failed_media_does_not_partially_persist(tmp_path) -> None:
         "content": "mixed",
         "media": [
             {"data_url": _tiny_png_data_url()},
-            {"data_url": _data_url("application/pdf", b"%PDF-1.4")},
+            {"data_url": _data_url("application/zip", b"PK\x03\x04")},
         ],
     }
 
