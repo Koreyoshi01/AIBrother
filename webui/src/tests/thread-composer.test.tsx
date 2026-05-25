@@ -178,10 +178,10 @@ describe("ThreadComposer", () => {
     const input = screen.getByPlaceholderText("Type your message...");
     expect(input.className).toContain("min-h-[50px]");
     expect(input.parentElement?.parentElement?.className).toContain("max-w-[49.5rem]");
-    expect(input.parentElement?.parentElement?.className).toContain("rounded-[22px]");
-    expect(input.parentElement?.parentElement?.className).toContain("shadow-[0_12px_30px_rgba(15,23,42,0.07)]");
+    expect(input.parentElement?.parentElement?.className).toContain("rounded-[14px]");
+    expect(input.parentElement?.parentElement?.className).toContain("shadow-[0_1px_6px_rgba(0,0,0,.04)]");
     expect(screen.getByRole("button", { name: "Attach image" }).className).toContain("bg-card");
-    expect(screen.getByRole("button", { name: "Send message" }).className).toContain("bg-foreground");
+    expect(screen.getByRole("button", { name: "Send message" }).className).toContain("bg-primary");
   });
 
   it("shows turn run timer when runStartedAt is set", () => {

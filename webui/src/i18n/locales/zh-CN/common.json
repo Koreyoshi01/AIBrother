@@ -1,6 +1,7 @@
 {
   "app": {
-    "brand": "nanobot",
+    "brand": "🧑‍🔬 AI 大师兄",
+    "brandSub": "课题组智能助手",
     "loading": {
       "connecting": "正在连接 nanobot…",
       "boot": "正在加载 nanobot…"
@@ -31,11 +32,11 @@
       "completed": "重启已完成，用时 {{seconds}} 秒。"
     },
     "documentTitle": {
-      "base": "nanobot",
-      "chat": "{{title}} · nanobot"
+      "base": "AI 大师兄",
+      "chat": "{{title}} · AI 大师兄"
     },
     "meta": {
-      "description": "nanobot Web UI —— 与你的 nanobot 工作区对话。"
+      "description": "AI 大师兄 —— 课题组智能助手。"
     }
   },
   "sidebar": {
@@ -44,7 +45,8 @@
     "collapse": "收起侧边栏",
     "toggleTheme": "切换主题",
     "home": "首页",
-    "newChat": "新建对话",
+    "newChat": "新对话",
+    "historyLabel": "历史对话",
     "searchAria": "搜索",
     "viewOptions": "视图",
     "compactList": "紧凑列表",
@@ -430,8 +432,27 @@
   },
   "thread": {
     "loadingConversation": "正在加载对话…",
+    "subtitle": "内容由 AI 大师兄 生成",
     "empty": {
-      "greeting": "我可以帮你做什么？",
+      "greeting": "我是AI大师兄，有什么我可以帮你的吗？",
+      "exampleChips": {
+        "centrifuge": {
+          "label": "如何操作离心机？",
+          "prompt": "如何操作离心机？"
+        },
+        "abstract": {
+          "label": "帮我写论文摘要",
+          "prompt": "帮我写论文摘要"
+        },
+        "diary": {
+          "label": "总结今天实验现象",
+          "prompt": "总结今天实验现象"
+        },
+        "reaction": {
+          "label": "反应液变黄怎么办？",
+          "prompt": "反应液变黄怎么办？"
+        }
+      },
       "quickActions": {
         "plan": {
           "title": "创建项目计划",
@@ -492,8 +513,8 @@
       "settings": "打开设置"
     },
     "composer": {
-      "placeholderThread": "输入消息…",
-      "placeholderHero": "问任何问题...",
+      "placeholderThread": "发消息…",
+      "placeholderHero": "发消息…",
       "placeholderOpening": "正在打开新对话…",
       "placeholderStreaming": "模型正在回复…",
       "inputAria": "消息输入框",
@@ -504,6 +525,7 @@
       "goalStateExpandAria": "查看完整目标",
       "goalStateSheetTitle": "目标",
       "send": "发送消息",
+      "sendLabel": "发送",
       "stop": "停止响应",
       "attachImage": "添加图片",
       "imageMode": {

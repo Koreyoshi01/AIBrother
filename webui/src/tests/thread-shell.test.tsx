@@ -436,15 +436,15 @@ describe("ThreadShell", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Write code" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "How do I use the centrifuge?" })).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Write code" }));
+    fireEvent.click(screen.getByRole("button", { name: "How do I use the centrifuge?" }));
 
     await waitFor(() =>
       expect(client.sendMessage).toHaveBeenCalledWith(
         "chat-a",
-        "Help me write the code for this task, starting with the smallest useful change.",
+        "How do I use the centrifuge?",
         undefined,
       ),
     );
@@ -897,14 +897,14 @@ describe("ThreadShell", () => {
     expect(screen.getByRole("option", { name: /\/history/i })).toBeInTheDocument();
   });
 
-  it("switches welcome quick actions when image mode is enabled", async () => {
+  it("shows welcome example chips on the blank page", async () => {
     const client = makeClient();
     render(
       wrap(
         client,
         <ThreadShell
           session={null}
-          title="nanobot"
+          title="AI Lab Assistant"
           onToggleSidebar={() => {}}
           onNewChat={() => {}}
         />,
@@ -912,13 +912,10 @@ describe("ThreadShell", () => {
     );
     await act(async () => {});
 
-    expect(screen.getByText("Write code")).toBeInTheDocument();
-    expect(screen.queryByText("Design an app icon")).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "Toggle image generation mode" }));
-
-    expect(screen.getByText("Design an app icon")).toBeInTheDocument();
-    expect(screen.queryByText("Write code")).not.toBeInTheDocument();
+    expect(screen.getByText("How do I use the centrifuge?")).toBeInTheDocument();
+    expect(screen.getByText("Help me write an abstract")).toBeInTheDocument();
+    expect(screen.getByText("Summarize today's experiment")).toBeInTheDocument();
+    expect(screen.getByText("Why did the reaction turn yellow?")).toBeInTheDocument();
   });
 
   it("surfaces a dismissible banner when the stream reports message_too_big", async () => {

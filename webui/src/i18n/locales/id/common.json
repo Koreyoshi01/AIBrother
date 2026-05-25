@@ -36,7 +36,8 @@
     },
     "meta": {
       "description": "UI web nanobot — ngobrol dengan workspace nanobot Anda."
-    }
+    },
+    "brandSub": "Asisten laboratorium"
   },
   "sidebar": {
     "navigation": "Navigasi bilah samping",
@@ -63,7 +64,8 @@
     "language": {
       "label": "Bahasa",
       "ariaLabel": "Ganti bahasa"
-    }
+    },
+    "historyLabel": "Riwayat"
   },
   "settings": {
     "backToChat": "Kembali ke obrolan",
@@ -483,6 +485,24 @@
           "title": "Edit gambar",
           "prompt": "Bantu saya mengedit gambar. Minta saya mengunggah atau menyebutkan gambar terlebih dahulu, lalu buat hasil editnya."
         }
+      },
+      "exampleChips": {
+        "centrifuge": {
+          "label": "Cara pakai sentrifug?",
+          "prompt": "Bagaimana cara mengoperasikan sentrifug?"
+        },
+        "abstract": {
+          "label": "Bantu tulis abstrak",
+          "prompt": "Bantu saya menulis abstrak paper."
+        },
+        "diary": {
+          "label": "Ringkas eksperimen hari ini",
+          "prompt": "Ringkas fenomena eksperimen hari ini."
+        },
+        "reaction": {
+          "label": "Larutan reaksi menguning",
+          "prompt": "Mengapa larutan reaksi berubah kuning?"
+        }
       }
     },
     "header": {
@@ -615,10 +635,12 @@
         "mcpBadge": "MCP",
         "cliDescription": "Gunakan @{{name}} sebagai aplikasi CLI lokal",
         "mcpDescription": "Gunakan @{{name}} sebagai server MCP"
-      }
+      },
+      "sendLabel": "Kirim"
     },
     "scrollToBottom": "Gulir ke bawah",
-    "loadEarlier": "Muat pesan sebelumnya"
+    "loadEarlier": "Muat pesan sebelumnya",
+    "subtitle": "Konten dibuat oleh asisten AI"
   },
   "message": {
     "streaming": "sedang mengalir",

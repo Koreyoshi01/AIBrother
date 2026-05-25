@@ -36,7 +36,8 @@
     },
     "meta": {
       "description": "Interface web nanobot — discutez avec votre espace de travail nanobot."
-    }
+    },
+    "brandSub": "Assistant de laboratoire"
   },
   "sidebar": {
     "navigation": "Navigation de la barre latérale",
@@ -63,7 +64,8 @@
     "language": {
       "label": "Langue",
       "ariaLabel": "Changer de langue"
-    }
+    },
+    "historyLabel": "Historique"
   },
   "settings": {
     "backToChat": "Retour à la discussion",
@@ -483,6 +485,24 @@
           "title": "Modifier une image",
           "prompt": "Aidez-moi à modifier une image. Demandez-moi d’abord de téléverser ou d’indiquer l’image, puis générez le résultat modifié."
         }
+      },
+      "exampleChips": {
+        "centrifuge": {
+          "label": "Utiliser la centrifugeuse ?",
+          "prompt": "Comment utiliser la centrifugeuse ?"
+        },
+        "abstract": {
+          "label": "Rédiger un résumé",
+          "prompt": "Aide-moi à rédiger un résumé de papier."
+        },
+        "diary": {
+          "label": "Résumer l'expérience",
+          "prompt": "Résume les observations de l'expérience d'aujourd'hui."
+        },
+        "reaction": {
+          "label": "Liquide devenu jaune",
+          "prompt": "Pourquoi le mélange réactionnel est-il devenu jaune ?"
+        }
       }
     },
     "header": {
@@ -615,10 +635,12 @@
         "mcpBadge": "MCP",
         "cliDescription": "Utiliser @{{name}} comme app CLI locale",
         "mcpDescription": "Utiliser @{{name}} comme serveur MCP"
-      }
+      },
+      "sendLabel": "Envoyer"
     },
     "scrollToBottom": "Faire défiler vers le bas",
-    "loadEarlier": "Charger les messages précédents"
+    "loadEarlier": "Charger les messages précédents",
+    "subtitle": "Contenu généré par l'assistant IA"
   },
   "message": {
     "streaming": "en cours de génération",

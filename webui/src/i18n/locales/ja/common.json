@@ -36,7 +36,8 @@
     },
     "meta": {
       "description": "nanobot Web UI — nanobot ワークスペースと会話します。"
-    }
+    },
+    "brandSub": "研究室アシスタント"
   },
   "sidebar": {
     "navigation": "サイドバーのナビゲーション",
@@ -63,7 +64,8 @@
     "language": {
       "label": "言語",
       "ariaLabel": "言語を変更"
-    }
+    },
+    "historyLabel": "履歴"
   },
   "settings": {
     "backToChat": "チャットに戻る",
@@ -483,6 +485,24 @@
           "title": "画像を編集",
           "prompt": "画像編集を手伝ってください。まず編集する画像のアップロードまたは指定を求め、その後に編集後の結果を生成してください。"
         }
+      },
+      "exampleChips": {
+        "centrifuge": {
+          "label": "遠心機の使い方は？",
+          "prompt": "遠心機の使い方を教えてください。"
+        },
+        "abstract": {
+          "label": "論文要旨を書いて",
+          "prompt": "論文の要旨を書くのを手伝ってください。"
+        },
+        "diary": {
+          "label": "今日の実験をまとめて",
+          "prompt": "今日の実験現象をまとめてください。"
+        },
+        "reaction": {
+          "label": "反応液が黄色くなった",
+          "prompt": "反応液が黄色くなった原因は何ですか？"
+        }
       }
     },
     "header": {
@@ -615,10 +635,12 @@
         "mcpBadge": "MCP",
         "cliDescription": "@{{name}} をローカル CLI アプリとして使用",
         "mcpDescription": "@{{name}} を MCP サーバーとして使用"
-      }
+      },
+      "sendLabel": "送信"
     },
     "scrollToBottom": "一番下へスクロール",
-    "loadEarlier": "以前のメッセージを読み込む"
+    "loadEarlier": "以前のメッセージを読み込む",
+    "subtitle": "AI ラボアシスタントが生成"
   },
   "message": {
     "streaming": "生成中",

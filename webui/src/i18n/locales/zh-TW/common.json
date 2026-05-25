@@ -36,7 +36,8 @@
     },
     "meta": {
       "description": "nanobot Web UI —— 與你的 nanobot 工作區對話。"
-    }
+    },
+    "brandSub": "課題組智能助手"
   },
   "sidebar": {
     "navigation": "側邊欄導覽",
@@ -63,7 +64,8 @@
     "language": {
       "label": "語言",
       "ariaLabel": "切換語言"
-    }
+    },
+    "historyLabel": "歷史對話"
   },
   "settings": {
     "backToChat": "返回對話",
@@ -483,6 +485,24 @@
           "title": "編輯圖片",
           "prompt": "幫我編輯一張圖片。先請我上傳或指定要編輯的圖片，然後生成編輯後的結果。"
         }
+      },
+      "exampleChips": {
+        "centrifuge": {
+          "label": "如何操作離心機？",
+          "prompt": "如何操作離心機？"
+        },
+        "abstract": {
+          "label": "幫我寫論文摘要",
+          "prompt": "幫我寫論文摘要"
+        },
+        "diary": {
+          "label": "總結今天實驗現象",
+          "prompt": "總結今天實驗現象"
+        },
+        "reaction": {
+          "label": "反應液變黃怎麼辦？",
+          "prompt": "反應液變黃怎麼辦？"
+        }
       }
     },
     "header": {
@@ -615,10 +635,12 @@
         "mcpBadge": "MCP",
         "cliDescription": "使用 @{{name}} 呼叫本機 CLI",
         "mcpDescription": "使用 @{{name}} 呼叫 MCP 服務"
-      }
+      },
+      "sendLabel": "傳送"
     },
     "scrollToBottom": "捲動到底部",
-    "loadEarlier": "載入更早訊息"
+    "loadEarlier": "載入更早訊息",
+    "subtitle": "內容由 AI 大師兄 生成"
   },
   "message": {
     "streaming": "串流輸出中",

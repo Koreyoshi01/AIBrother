@@ -23,7 +23,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Separator } from "@/components/ui/separator";
 import type {
   ChatSummary,
   SidebarSortMode,
@@ -71,59 +70,46 @@ export function Sidebar(props: SidebarProps) {
     <nav
       ref={props.containActionMenus ? setMenuPortalContainer : undefined}
       aria-label={t("sidebar.navigation")}
-      className="flex h-full w-full min-w-0 flex-col border-r border-sidebar-border/60 bg-sidebar text-sidebar-foreground"
+      className="flex h-full w-full min-w-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground"
     >
       <div
         className={cn(
-          "flex items-center px-3 pb-2.5 pt-3",
-          collapsed ? "w-14 justify-start" : "justify-between",
+          "px-2.5 pt-4",
+          collapsed ? "flex w-14 flex-col items-center px-0" : "",
         )}
       >
-        <button
-          type="button"
-          aria-label={collapsed ? toggleLabel : undefined}
-          aria-hidden={collapsed ? undefined : true}
-          title={collapsed ? toggleLabel : undefined}
-          onClick={collapsed ? props.onExpand : undefined}
-          tabIndex={collapsed ? 0 : -1}
-          className={cn(
-            "flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl transition-colors",
-            collapsed
-              ? "-ml-0.5 hover:bg-sidebar-accent/75"
-              : "pointer-events-none -ml-0.5",
-          )}
-        >
-          <img
-            src="/brand/nanobot_icon.png"
-            alt=""
-            className="h-8 w-8 select-none object-contain"
-            draggable={false}
-          />
-        </button>
-        {!collapsed && (
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={t("sidebar.collapse")}
-            onClick={props.onCollapse}
-            className="h-7 w-7 rounded-lg text-muted-foreground/85 hover:bg-sidebar-accent/75 hover:text-sidebar-foreground"
+        {!collapsed ? (
+          <div className="mb-5 px-1.5">
+            <div className="text-[22px] font-bold leading-tight text-foreground">
+              {t("app.brand")}
+            </div>
+            <div className="mt-1 text-xs text-muted-foreground">
+              {t("app.brandSub")}
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            aria-label={toggleLabel}
+            title={toggleLabel}
+            onClick={props.onExpand}
+            className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl transition-colors hover:bg-sidebar-accent/75"
           >
-            <Menu className="h-3.5 w-3.5" />
-          </Button>
+            <img
+              src="/brand/person.png"
+              alt=""
+              className="h-7 w-7 select-none rounded-full object-cover"
+              draggable={false}
+            />
+          </button>
         )}
-      </div>
 
-      <div
-        className={cn(
-          "space-y-1.5 px-2 pb-2",
-          collapsed && "flex w-14 flex-col items-center px-0",
-        )}
-      >
         <SidebarActionButton
           collapsed={collapsed}
           label={t("sidebar.newChat")}
           onClick={props.onNewChat}
           icon={<SquarePen className="h-4 w-4" />}
+          primary
         />
         <SidebarActionButton
           collapsed={collapsed}
@@ -142,18 +128,29 @@ export function Sidebar(props: SidebarProps) {
           view={props.viewState}
           onUpdateView={props.onUpdateView}
         />
-        {props.archivedCount ? (
+        {props.archivedCount && !collapsed ? (
           <SidebarActionButton
-            collapsed={collapsed}
-            label={props.showArchived ? t("chat.hideArchived") : t("chat.showArchived")}
+            collapsed={false}
+            label={
+              props.showArchived
+                ? t("chat.hideArchived")
+                : t("chat.showArchived")
+            }
             onClick={props.onToggleArchived}
             icon={<Archive className="h-4 w-4" />}
           />
         ) : null}
+
+        {!collapsed ? (
+          <div className="mt-4 px-1.5 text-xs text-muted-foreground">
+            {t("sidebar.historyLabel")}
+          </div>
+        ) : null}
       </div>
+
       <div
         className={cn(
-          "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden transition-opacity duration-200",
+          "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-1 pt-1 transition-opacity duration-200",
           collapsed && "pointer-events-none opacity-0",
         )}
       >
@@ -178,16 +175,17 @@ export function Sidebar(props: SidebarProps) {
             showTimestamps={props.viewState?.show_timestamps}
             sort={props.viewState?.sort}
             showArchived={props.showArchived}
+            hideGroupLabels
             actionMenuPortalContainer={
               props.containActionMenus ? menuPortalContainer : undefined
             }
           />
         )}
       </div>
-      <Separator className="bg-sidebar-border/50" />
+
       <div
         className={cn(
-          "flex items-center gap-1 px-2.5 py-2.5 text-xs",
+          "flex items-center gap-1 border-t border-sidebar-border/80 px-2 py-2.5",
           collapsed && "w-14 flex-col px-0",
         )}
       >
@@ -195,10 +193,21 @@ export function Sidebar(props: SidebarProps) {
           collapsed={collapsed}
           label={t("sidebar.settings")}
           onClick={props.onOpenSettings}
-          className={collapsed ? undefined : "flex-1"}
           icon={<Settings className="h-4 w-4" />}
+          className={collapsed ? undefined : "flex-1"}
         />
-        <ConnectionBadge />
+        {!collapsed ? <ConnectionBadge /> : null}
+        {!collapsed ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={t("sidebar.collapse")}
+            onClick={props.onCollapse}
+            className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground/85 hover:bg-sidebar-accent/75 hover:text-sidebar-foreground"
+          >
+            <Menu className="h-3.5 w-3.5" />
+          </Button>
+        ) : null}
       </div>
     </nav>
   );
@@ -210,12 +219,14 @@ function SidebarActionButton({
   icon,
   onClick,
   className,
+  primary = false,
 }: {
   collapsed: boolean;
   label: string;
   icon: ReactNode;
   onClick: () => void;
   className?: string;
+  primary?: boolean;
 }) {
   return (
     <Button
@@ -225,29 +236,25 @@ function SidebarActionButton({
       title={collapsed ? label : undefined}
       onClick={onClick}
       className={cn(
-        "group h-8 min-w-0 gap-2 overflow-hidden rounded-full font-medium text-sidebar-foreground/85 hover:bg-sidebar-accent/75 hover:text-sidebar-foreground",
-        "transition-[width,padding,border-radius,color,background-color] duration-300 ease-out",
-        collapsed
-          ? "w-9 justify-center gap-0 rounded-xl px-0"
-          : "w-full justify-start gap-2 px-3 text-[12.5px]",
+        "group h-9 min-w-0 gap-2 overflow-hidden font-medium transition-colors",
+        primary
+          ? collapsed
+            ? "w-9 justify-center rounded-xl bg-white px-0 shadow-[0_1px_2px_rgba(0,0,0,.06)] hover:bg-white/90"
+            : "w-full justify-start rounded-[10px] bg-white px-3 text-[14px] text-foreground shadow-[0_1px_2px_rgba(0,0,0,.06)] hover:bg-white/90"
+          : collapsed
+            ? "w-9 justify-center rounded-xl px-0 text-sidebar-foreground/85 hover:bg-sidebar-accent/75"
+            : "w-full justify-start rounded-[10px] px-3 text-[13px] text-sidebar-foreground/85 hover:bg-sidebar-accent/75 hover:text-sidebar-foreground",
+        collapsed && !primary && "gap-0",
         className,
       )}
     >
-      <span
-        className={cn(
-          "flex shrink-0 items-center justify-center transition-transform duration-300 ease-out",
-          collapsed ? "translate-x-0" : "translate-x-0",
-        )}
-        aria-hidden
-      >
+      <span className="flex shrink-0 items-center justify-center" aria-hidden>
         {icon}
       </span>
       <span
         className={cn(
-          "min-w-0 overflow-hidden truncate whitespace-nowrap transition-[max-width,opacity,transform] duration-200 ease-out",
-          collapsed
-            ? "max-w-0 -translate-x-1 opacity-0"
-            : "max-w-[12rem] translate-x-0 opacity-100",
+          "min-w-0 overflow-hidden truncate whitespace-nowrap transition-[max-width,opacity] duration-200",
+          collapsed ? "max-w-0 opacity-0" : "max-w-[12rem] opacity-100",
         )}
       >
         {label}
@@ -279,21 +286,18 @@ function SidebarViewMenu({
           aria-label={t("sidebar.viewOptions")}
           title={compact ? t("sidebar.viewOptions") : undefined}
           className={cn(
-            "h-8 min-w-0 overflow-hidden font-medium text-sidebar-foreground/75 hover:bg-sidebar-accent/75 hover:text-sidebar-foreground",
-            "transition-[width,padding,border-radius,color,background-color] duration-300 ease-out",
+            "h-9 min-w-0 overflow-hidden font-medium text-sidebar-foreground/85 hover:bg-sidebar-accent/75 hover:text-sidebar-foreground",
             compact
               ? "w-9 justify-center gap-0 rounded-xl px-0"
-              : "w-full justify-start gap-2 rounded-full px-3 text-[12.5px]",
+              : "w-full justify-start gap-2 rounded-[10px] px-3 text-[13px]",
           )}
           variant="ghost"
         >
           <ListFilter className="h-4 w-4 shrink-0" aria-hidden />
           <span
             className={cn(
-              "min-w-0 overflow-hidden truncate whitespace-nowrap transition-[max-width,opacity,transform] duration-200 ease-out",
-              compact
-                ? "max-w-0 -translate-x-1 opacity-0"
-                : "max-w-[12rem] translate-x-0 opacity-100",
+              "min-w-0 overflow-hidden truncate whitespace-nowrap transition-[max-width,opacity] duration-200",
+              compact ? "max-w-0 opacity-0" : "max-w-[12rem] opacity-100",
             )}
           >
             {t("sidebar.viewOptions")}

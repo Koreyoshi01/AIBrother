@@ -36,7 +36,8 @@
     },
     "meta": {
       "description": "Giao diện web nanobot — trò chuyện với workspace nanobot của bạn."
-    }
+    },
+    "brandSub": "Trợ lý phòng lab"
   },
   "sidebar": {
     "navigation": "Điều hướng thanh bên",
@@ -63,7 +64,8 @@
     "language": {
       "label": "Ngôn ngữ",
       "ariaLabel": "Đổi ngôn ngữ"
-    }
+    },
+    "historyLabel": "Lịch sử"
   },
   "settings": {
     "backToChat": "Quay lại trò chuyện",
@@ -483,6 +485,24 @@
           "title": "Chỉnh sửa ảnh",
           "prompt": "Giúp tôi chỉnh sửa một ảnh. Trước tiên hãy yêu cầu tôi tải lên hoặc chỉ định ảnh, rồi tạo kết quả đã chỉnh sửa."
         }
+      },
+      "exampleChips": {
+        "centrifuge": {
+          "label": "Cách dùng máy ly tâm?",
+          "prompt": "Làm thế nào để vận hành máy ly tâm?"
+        },
+        "abstract": {
+          "label": "Viết tóm tắt bài báo",
+          "prompt": "Giúp tôi viết phần tóm tắt bài báo."
+        },
+        "diary": {
+          "label": "Tóm tắt thí nghiệm hôm nay",
+          "prompt": "Tóm tắt hiện tượng thí nghiệm hôm nay."
+        },
+        "reaction": {
+          "label": "Dung dịch phản ứng vàng",
+          "prompt": "Tại sao hỗn hợp phản ứng chuyển màu vàng?"
+        }
       }
     },
     "header": {
@@ -615,10 +635,12 @@
         "mcpBadge": "MCP",
         "cliDescription": "Dùng @{{name}} như ứng dụng CLI cục bộ",
         "mcpDescription": "Dùng @{{name}} như máy chủ MCP"
-      }
+      },
+      "sendLabel": "Gửi"
     },
     "scrollToBottom": "Cuộn xuống cuối",
-    "loadEarlier": "Tải tin nhắn trước đó"
+    "loadEarlier": "Tải tin nhắn trước đó",
+    "subtitle": "Nội dung do trợ lý AI tạo"
   },
   "message": {
     "streaming": "đang truyền",

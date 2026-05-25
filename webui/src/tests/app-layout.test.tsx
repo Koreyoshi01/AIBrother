@@ -1143,7 +1143,7 @@ describe("App layout", () => {
     expect(within(rail).queryByText("Existing chat")).not.toBeInTheDocument();
 
     fireEvent.click(within(rail).getByRole("button", { name: "Toggle sidebar" }));
-    await waitFor(() => expect(desktopAside.style.width).toBe("272px"));
+    await waitFor(() => expect(desktopAside.style.width).toBe("220px"));
 
     const sidebar = screen.getByRole("navigation", { name: "Sidebar navigation" });
     fireEvent.click(within(sidebar).getByRole("button", { name: "New chat" }));

@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 
 interface ThreadHeaderProps {
   title: string;
+  subtitle?: string;
+  showTitle?: boolean;
   onToggleSidebar: () => void;
   theme: "light" | "dark";
   onToggleTheme: () => void;
@@ -15,6 +17,8 @@ interface ThreadHeaderProps {
 
 export function ThreadHeader({
   title,
+  subtitle,
+  showTitle = true,
   onToggleSidebar,
   theme,
   onToggleTheme,
@@ -22,59 +26,42 @@ export function ThreadHeader({
   minimal = false,
 }: ThreadHeaderProps) {
   const { t } = useTranslation();
-  if (minimal) {
-    return (
-      <div className="relative z-10 flex h-11 items-center justify-between gap-3 px-3 py-2">
+  const resolvedSubtitle = subtitle ?? t("thread.subtitle");
+
+  return (
+    <div className="relative z-10 shrink-0 px-3 pb-1 pt-2">
+      <div className="relative flex min-h-9 items-center justify-center">
         <Button
           variant="ghost"
           size="icon"
           aria-label={t("thread.header.toggleSidebar")}
           onClick={onToggleSidebar}
           className={cn(
-            "h-7 w-7 rounded-md text-muted-foreground hover:bg-accent/35 hover:text-foreground",
+            "absolute left-0 h-7 w-7 rounded-md text-muted-foreground hover:bg-accent/35 hover:text-foreground",
             hideSidebarToggleOnDesktop && "lg:hidden",
           )}
         >
           <Menu className="h-3.5 w-3.5" />
         </Button>
+
+        <div className="flex max-w-[min(70vw,32rem)] flex-col items-center px-10 text-center">
+          {showTitle && !minimal ? (
+            <h2 className="truncate text-[15px] font-semibold leading-tight text-foreground">
+              {title}
+            </h2>
+          ) : null}
+          <p className="mt-0.5 text-[11px] leading-tight text-[#b0b4bb]">
+            {resolvedSubtitle}
+          </p>
+        </div>
+
         <ThemeButton
           theme={theme}
           onToggleTheme={onToggleTheme}
           label={t("thread.header.toggleTheme")}
-          className="ml-auto"
+          className="absolute right-0"
         />
       </div>
-    );
-  }
-
-  return (
-    <div className="relative z-10 flex items-center justify-between gap-3 px-3 py-2">
-      <div className="relative flex min-w-0 items-center gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={t("thread.header.toggleSidebar")}
-          onClick={onToggleSidebar}
-          className={cn(
-            "h-7 w-7 rounded-md text-muted-foreground hover:bg-accent/35 hover:text-foreground",
-            hideSidebarToggleOnDesktop && "lg:hidden",
-          )}
-        >
-          <Menu className="h-3.5 w-3.5" />
-        </Button>
-        <div className="flex min-w-0 items-center rounded-md px-1.5 py-1 text-[12px] font-medium text-muted-foreground">
-          <span className="max-w-[min(60vw,32rem)] truncate">{title}</span>
-        </div>
-      </div>
-
-      <ThemeButton
-        theme={theme}
-        onToggleTheme={onToggleTheme}
-        label={t("thread.header.toggleTheme")}
-        className="ml-auto shrink-0"
-      />
-
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-full h-4" />
     </div>
   );
 }

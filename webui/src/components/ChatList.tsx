@@ -46,6 +46,7 @@ interface ChatListProps {
   showTimestamps?: boolean;
   sort?: SidebarSortMode;
   showArchived?: boolean;
+  hideGroupLabels?: boolean;
   actionMenuPortalContainer?: HTMLElement | null;
   loading?: boolean;
   emptyLabel?: string;
@@ -69,6 +70,7 @@ export const ChatList = memo(function ChatList({
   showTimestamps = false,
   sort = "updated_desc",
   showArchived = false,
+  hideGroupLabels = false,
   actionMenuPortalContainer,
   loading,
   emptyLabel,
@@ -147,7 +149,7 @@ export const ChatList = memo(function ChatList({
       <div className="min-w-0 space-y-3 px-2 py-1.5">
         {limitedGroups.map((group) => (
           <section key={group.label} aria-label={group.label}>
-            <div className="px-2 pb-1 text-[12px] font-medium text-muted-foreground/65">
+            <div className={cn("px-2 pb-1 text-[12px] font-medium text-muted-foreground/65", hideGroupLabels && "sr-only")}>
               {group.label}
             </div>
             <ul className="space-y-0.5">
@@ -178,11 +180,11 @@ export const ChatList = memo(function ChatList({
                   <li key={s.key} className="min-w-0">
                     <div
                       className={cn(
-                        "group flex min-w-0 max-w-full items-center gap-2 rounded-xl px-2 text-[13px] transition-colors",
+                        "group flex min-w-0 max-w-full items-center gap-2 rounded-[10px] px-3 text-[13px] transition-colors",
                         compact ? "min-h-7" : "min-h-8",
                         active
-                          ? "bg-sidebar-accent/70 text-sidebar-accent-foreground shadow-[inset_0_0_0_1px_hsl(var(--sidebar-border)/0.28)]"
-                          : "text-sidebar-foreground/82 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
+                          ? "bg-white text-foreground shadow-[0_1px_2px_rgba(0,0,0,.06)]"
+                          : "text-[#646a73] hover:bg-[#eceef2] hover:text-foreground",
                       )}
                     >
                       <button

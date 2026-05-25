@@ -1094,9 +1094,9 @@ export function ThreadComposer({
         className={cn(
           "relative mx-auto flex w-full flex-col overflow-visible transition-all duration-200",
           isHero
-            ? "max-w-[58rem] rounded-[28px] border border-black/[0.035] bg-card shadow-[0_20px_55px_rgba(15,23,42,0.08)] dark:border-white/[0.06] dark:shadow-[0_24px_55px_rgba(0,0,0,0.34)]"
-            : "max-w-[49.5rem] rounded-[22px] border border-black/[0.035] bg-card shadow-[0_12px_30px_rgba(15,23,42,0.07)] dark:border-white/[0.06] dark:shadow-[0_16px_34px_rgba(0,0,0,0.28)]",
-          "focus-within:ring-1 focus-within:ring-foreground/8",
+            ? "max-w-[58rem] rounded-[14px] border border-[#e8eaed] bg-white shadow-[0_1px_6px_rgba(0,0,0,.04)] dark:border-white/10 dark:bg-card dark:shadow-[0_1px_6px_rgba(0,0,0,.18)]"
+            : "max-w-[49.5rem] rounded-[14px] border border-[#e8eaed] bg-white shadow-[0_1px_6px_rgba(0,0,0,.04)] dark:border-white/10 dark:bg-card dark:shadow-[0_1px_6px_rgba(0,0,0,.18)]",
+          "focus-within:ring-1 focus-within:ring-primary/20",
           disabled && "opacity-60",
           isDragging && "ring-2 ring-primary/40 motion-reduce:ring-0 motion-reduce:border-primary",
           goalState?.active &&
@@ -1282,27 +1282,23 @@ export function ThreadComposer({
           <span className={cn(isHero ? "hidden" : "sm:hidden")} aria-hidden />
           <Button
             type={showStopButton ? "button" : "submit"}
-            size="icon"
             disabled={showStopButton ? disabled : !canSend}
             aria-label={showStopButton ? t("thread.composer.stop") : t("thread.composer.send")}
             onClick={showStopButton ? onStop : undefined}
             className={cn(
-              "rounded-full transition-transform",
+              "shrink-0 rounded-[10px] px-3 text-sm font-medium transition-transform",
               showStopButton
-                ? "border border-border/70 bg-card text-foreground/85 shadow-[0_3px_10px_rgba(15,23,42,0.08)] hover:bg-muted/65 hover:text-foreground disabled:text-muted-foreground/50"
-                : isHero
-                  ? "border border-foreground bg-foreground text-background shadow-[0_4px_12px_rgba(15,23,42,0.20)] hover:bg-foreground/90 disabled:border-foreground/35 disabled:bg-foreground/35 disabled:text-background/80"
-                  : "border border-foreground bg-foreground text-background shadow-[0_3px_10px_rgba(15,23,42,0.18)] hover:bg-foreground/90 disabled:border-foreground/35 disabled:bg-foreground/35 disabled:text-background/80",
-              "h-9 w-9",
-              (canSend || showStopButton) && "hover:scale-[1.03] active:scale-95",
+                ? "h-9 min-w-9 border border-border/70 bg-card text-foreground/85 shadow-sm hover:bg-muted/65 hover:text-foreground disabled:text-muted-foreground/50"
+                : "h-9 min-w-[64px] border-none bg-primary text-primary-foreground shadow-none hover:bg-primary/90 disabled:bg-primary/35 disabled:text-primary-foreground/80",
+              (canSend || showStopButton) && "hover:scale-[1.02] active:scale-95",
             )}
           >
             {showStopButton ? (
-              <Square className={cn("fill-current stroke-current", isHero ? "h-3 w-3" : "h-2.5 w-2.5")} />
+              <Square className="h-3 w-3 fill-current stroke-current" />
             ) : isStreaming ? (
-              <Loader2 className={cn(isHero ? "h-4.5 w-4.5" : "h-4 w-4", "animate-spin")} />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <ArrowUp className={cn(isHero ? "h-4.5 w-4.5" : "h-4 w-4")} />
+              t("thread.composer.sendLabel")
             )}
           </Button>
         </div>
