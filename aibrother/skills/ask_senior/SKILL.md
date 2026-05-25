@@ -31,10 +31,11 @@ always: true
 
 1. **实验室操作手册** — `find_files(path="knowledge/lab_manual")` + `grep` 搜索精确操作
 2. **组内实验记录** — `find_files(path="knowledge/group_knowledge")` + `grep` 搜索相似问题
-3. **组内问答历史** — `grep` 搜索 conversation_history.md 中相似的问答
-4. **论文知识** — `grep` 搜索 papers/summaries.md 中相关的论文
-5. **公开知识库** — `grep` 搜索 public/external_links.md
-6. **Web搜索** — 以上都不足时，用 `web_search` 搜索外部资料
+3. **已导入资源库** — `aibrother_search_resources(query="...", category="experiment_records")` 搜索已导入的实验记录
+4. **组内问答历史** — `grep` 搜索 conversation_history.md 中相似的问答
+5. **论文知识** — `grep` 搜索 papers/summaries.md 中相关的论文
+6. **公开知识库** — `grep` 搜索 public/external_links.md
+7. **Web搜索** — 以上都不足时，用 `web_search` 搜索外部资料
 
 ### 回答格式
 
@@ -69,9 +70,10 @@ always: true
 1. **理解需求** — 判断用户要的是：论文推荐 / idea评估 / 方向调研
 2. **搜索外部论文** — 用 `web_search` 在学术搜索引擎（如 arXiv、Semantic Scholar、Google Scholar）检索相关论文
 3. **获取摘要** — 用 `web_fetch` 获取论文摘要或全文
-4. **查阅组内知识** — 在 `group_knowledge` 中搜索是否有师兄们的阅读历史或讨论记录
-5. **查阅论文库** — 在 `papers/summaries.md` 中找相关论文摘要
-6. **整理分析** — 综合内外信息，给出自己的分析和建议
+4. **查阅已导入资源** — `aibrother_search_resources(query="...", category="read_papers")` 搜索已导入的文献阅读笔记
+5. **查阅组内知识** — 在 `group_knowledge` 中搜索是否有师兄们的阅读历史或讨论记录
+6. **查阅论文库** — 在 `papers/summaries.md` 中找相关论文摘要
+7. **整理分析** — 综合内外信息，给出自己的分析和建议
 
 ### 回答格式
 
@@ -96,10 +98,11 @@ always: true
 
 ### 工作流程
 
-1. **检索组内汇报历史** — 在 `group_knowledge` 中搜索是否有类似的汇报记录
-2. **查阅实验室手册** — 搜索 lab_manual 中与用户实验内容相关的背景知识
-3. **搜索外部资源** — 用 `web_search` 找汇报结构和技巧
-4. **组织回答** — 提供结构化的汇报建议
+1. **检索已导入资源** — `aibrother_search_resources(query="...")` 搜索已导入的组会PPT和实验记录
+2. **检索组内汇报历史** — 在 `group_knowledge` 中搜索是否有类似的汇报记录
+3. **查阅实验室手册** — 搜索 lab_manual 中与用户实验内容相关的背景知识
+4. **搜索外部资源** — 用 `web_search` 找汇报结构和技巧
+5. **组织回答** — 提供结构化的汇报建议
 
 ### 回答格式
 
@@ -165,7 +168,8 @@ always: true
 
 ## 通用规则
 
-1. **标注来源** — 所有信息必须标注来源层级（实验室手册/组内记录/论文/Web）
+0. **优先检索资源库** — 回答任何与实验、论文、汇报相关的问题时，先用 `aibrother_search_resources` 搜索已导入的资源库，避免遗漏用户已上传的资料
+1. **标注来源** — 所有信息必须标注来源层级（已导入资源/实验室手册/组内记录/论文/Web）
 2. **不确定时明确说明** — "这个问题我不太确定，以下是基于XXX的参考信息"
 3. **保持耐心** — 用户可能是本科生，用通俗的语言解释专业概念
 4. **安全性优先** — 涉及实验操作时，主动提醒安全注意事项

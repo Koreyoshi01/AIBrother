@@ -90,6 +90,46 @@ The current AI Brother demo uses a layered knowledge layout:
 
 The agent can search these layers before falling back to public web search.
 
+## Resource Import Workflow
+
+Imported resources live under `knowledge/resources/` and are grouped by use
+case:
+
+- `group_meeting_ppt/`: generated Markdown summaries for group meeting slides
+- `experiment_records/`: generated Markdown summaries for experiment records
+- `read_papers/`: generated Markdown summaries for read papers
+- `originals/`: copied source files, grouped by the same categories
+- `RESOURCE_INDEX.md`: human-readable resource index
+- `resources.jsonl`: structured resource index for WebUI and future RAG
+
+Use `import_resource()` to copy a source file into `originals/`, extract text,
+generate a conservative first-pass analysis, write a summary Markdown file, and
+refresh both indexes:
+
+```python
+from aibrother import import_resource
+
+record = import_resource(
+    "path/to/paper.pdf",
+    "read_papers",
+    title="MEA-MDEA hybrid solvents",
+    status="ready",
+)
+print(record.summary_md_path)
+```
+
+Supported categories are `group_meeting_ppt`, `experiment_records`, and
+`read_papers`. The first-pass analysis extracts tags, key findings, a short
+summary, and questions that still need manual confirmation. Later RAG indexing
+should treat the original file as the source of truth and the generated
+Markdown/JSONL files as rebuildable indexes.
+
+Agent workflows can use the `resource_manager` skill plus
+`aibrother_import_resource` for uploads and `aibrother_search_resources` before
+falling back to the broader `knowledge/` tree or web search. These tools use
+the same Markdown and JSONL indexes, so the frontend can read the resource
+library without a separate ingestion path.
+
 ## Quick Start
 
 ```bash
