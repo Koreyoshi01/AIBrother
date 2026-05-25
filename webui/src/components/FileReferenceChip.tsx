@@ -1,9 +1,15 @@
+import type { KeyboardEvent } from "react";
+
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  dispatchAIBrotherOpenFile,
+  normalizeAIBrotherKnowledgePath,
+} from "@/lib/aibrother-links";
 import { cn } from "@/lib/utils";
 
 type FileReferenceKind =
@@ -40,6 +46,19 @@ export function FileReferenceChip({
   const kind = fileKindForPath(path);
   const displayText = display === "path" ? path.replace(/\\/g, "/") : name;
   const fullPath = tooltipPath || path;
+  const knowledgePath = normalizeAIBrotherKnowledgePath(fullPath);
+  const interactiveProps = knowledgePath
+    ? {
+        role: "button",
+        tabIndex: 0,
+        onClick: () => dispatchAIBrotherOpenFile(knowledgePath),
+        onKeyDown: (event: KeyboardEvent<HTMLSpanElement>) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          dispatchAIBrotherOpenFile(knowledgePath);
+        },
+      }
+    : {};
   return (
     <TooltipProvider delayDuration={500} skipDelayDuration={100}>
       <Tooltip>
@@ -50,10 +69,13 @@ export function FileReferenceChip({
             <span
               data-testid={testId}
               aria-label={fullPath}
+              title={knowledgePath ? "在 AI大师兄知识库中打开" : undefined}
+              {...interactiveProps}
               className={cn(
                 "inline-flex max-w-full items-baseline gap-[0.28em] font-medium leading-[inherit]",
                 "text-sky-600 transition-colors hover:text-sky-700",
                 "dark:text-sky-300 dark:hover:text-sky-200",
+                knowledgePath && "cursor-pointer",
               )}
             >
               <FileReferenceIcon kind={kind} />

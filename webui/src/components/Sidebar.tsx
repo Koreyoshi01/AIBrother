@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import {
   Archive,
+  BookOpen,
   ListFilter,
   Menu,
   Search,
@@ -41,6 +42,7 @@ interface SidebarProps {
   onRequestRename: (key: string, label: string) => void;
   onToggleArchive: (key: string) => void;
   onOpenSettings: () => void;
+  onOpenAIBrother: () => void;
   onOpenSearch: () => void;
   onToggleArchived: () => void;
   onUpdateView: (view: Partial<SidebarViewState>) => void;
@@ -128,6 +130,12 @@ export function Sidebar(props: SidebarProps) {
           label={t("sidebar.searchAria")}
           onClick={props.onOpenSearch}
           icon={<Search className="h-4 w-4" />}
+        />
+        <SidebarActionButton
+          collapsed={collapsed}
+          label="AI大师兄"
+          onClick={props.onOpenAIBrother}
+          icon={<BookOpen className="h-4 w-4" />}
         />
         <SidebarViewMenu
           compact={collapsed}

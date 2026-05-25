@@ -5,6 +5,7 @@ import { RenameChatDialog } from "@/components/RenameChatDialog";
 import { Sidebar } from "@/components/Sidebar";
 import { SessionSearchDialog } from "@/components/SessionSearchDialog";
 import { SettingsView } from "@/components/settings/SettingsView";
+import { AIBrotherView } from "@/components/aibrother/AIBrotherView";
 import { ThreadShell } from "@/components/thread/ThreadShell";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 
@@ -20,6 +21,10 @@ import {
   loadSavedSecret,
   saveSecret,
 } from "@/lib/bootstrap";
+import {
+  AIBROTHER_OPEN_FILE_EVENT,
+  type AIBrotherOpenFileDetail,
+} from "@/lib/aibrother-links";
 import { deriveTitle } from "@/lib/format";
 import { NanobotClient } from "@/lib/nanobot-client";
 import { ClientProvider, useClient } from "@/providers/ClientProvider";
@@ -46,7 +51,7 @@ const SIDEBAR_WIDTH = 272;
 const SIDEBAR_RAIL_WIDTH = 56;
 const TOKEN_REFRESH_MARGIN_MS = 30_000;
 const TOKEN_REFRESH_MIN_DELAY_MS = 5_000;
-type ShellView = "chat" | "settings";
+type ShellView = "chat" | "settings" | "aibrother";
 
 function bootstrapTokenExpiresAt(expiresInSeconds: number): number {
   return Date.now() + Math.max(0, expiresInSeconds) * 1000;
@@ -325,6 +330,10 @@ function Shell({
     useSidebarState(sessions, !loading);
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [view, setView] = useState<ShellView>("chat");
+  const [aibrotherOpenRequest, setAibrotherOpenRequest] = useState<{
+    id: number;
+    path: string;
+  } | null>(null);
   const [desktopSidebarOpen, setDesktopSidebarOpen] =
     useState<boolean>(readSidebarOpen);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -594,6 +603,29 @@ function Shell({
     setMobileSidebarOpen(false);
   }, []);
 
+  const onOpenAIBrother = useCallback(() => {
+    setSessionSearchOpen(false);
+    setView("aibrother");
+    setMobileSidebarOpen(false);
+  }, []);
+
+  useEffect(() => {
+    const handleOpenAIBrotherFile = (event: Event) => {
+      const detail = (event as CustomEvent<AIBrotherOpenFileDetail>).detail;
+      const path = typeof detail?.path === "string" ? detail.path.trim() : "";
+      if (!path) return;
+      setAibrotherOpenRequest({ id: Date.now(), path });
+      setSessionSearchOpen(false);
+      setView("aibrother");
+      setMobileSidebarOpen(false);
+    };
+
+    window.addEventListener(AIBROTHER_OPEN_FILE_EVENT, handleOpenAIBrotherFile);
+    return () => {
+      window.removeEventListener(AIBROTHER_OPEN_FILE_EVENT, handleOpenAIBrotherFile);
+    };
+  }, []);
+
   const onBackToChat = useCallback(() => {
     setView("chat");
     setMobileSidebarOpen(false);
@@ -711,6 +743,10 @@ function Shell({
       });
       return;
     }
+    if (view === "aibrother") {
+      document.title = t("app.documentTitle.chat", { title: "AI大师兄" });
+      return;
+    }
     document.title = activeSession
       ? t("app.documentTitle.chat", { title: headerTitle })
       : t("app.documentTitle.base");
@@ -728,6 +764,7 @@ function Shell({
     onRequestRename,
     onToggleArchive,
     onOpenSettings,
+    onOpenAIBrother,
     onOpenSearch: onOpenSessionSearch,
     onToggleArchived,
     onUpdateView: onUpdateSidebarView,
@@ -805,7 +842,7 @@ function Shell({
           <div
             className={cn(
               "absolute inset-0 flex flex-col",
-              view === "settings" && "invisible pointer-events-none",
+              view !== "chat" && "invisible pointer-events-none",
             )}
           >
             <ThreadShell
@@ -830,6 +867,17 @@ function Shell({
                 onLogout={onLogout}
                 onRestart={onRestart}
                 isRestarting={isRestarting}
+              />
+            </div>
+          )}
+          {view === "aibrother" && (
+            <div className="absolute inset-0 flex flex-col">
+              <AIBrotherView
+                theme={theme}
+                onToggleTheme={toggle}
+                onToggleSidebar={toggleSidebar}
+                hideSidebarToggleOnDesktop
+                openRequest={aibrotherOpenRequest}
               />
             </div>
           )}

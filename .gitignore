@@ -19,6 +19,12 @@ webui/.vite/
 nanobot/webui/
 *.tsbuildinfo
 
+# AIBrother runtime files
+aibrother/HEARTBEAT.md
+aibrother/cron/
+aibrother/memory/history.jsonl
+aibrother/sessions/
+
 # Python bytecode & caches
 *.pyc
 *.pyo

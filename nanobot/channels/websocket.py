@@ -31,6 +31,7 @@ from websockets.http11 import Request as WsRequest
 from websockets.http11 import Response
 
 from nanobot.agent.tools.mcp import request_mcp_reload
+from nanobot.aibrother.knowledge import KnowledgeIndex
 from nanobot.bus.events import OUTBOUND_META_AGENT_UI, OutboundMessage
 from nanobot.bus.queue import MessageBus
 from nanobot.channels.base import BaseChannel
@@ -85,6 +86,7 @@ _MCP_PRESET_ACTIONS_BY_PATH = {
 }
 _MCP_VALUES_HEADER = "X-Nanobot-MCP-Values"
 _MCP_VALUES_HEADER_MAX_BYTES = 64 * 1024
+_AIBROTHER_INDEX: KnowledgeIndex | None = None
 
 if TYPE_CHECKING:
     from nanobot.session.manager import SessionManager
@@ -98,6 +100,13 @@ def _strip_trailing_slash(path: str) -> str:
 
 def _normalize_config_path(path: str) -> str:
     return _strip_trailing_slash(path)
+
+
+def _aibrother_index(workspace: Path | None = None) -> KnowledgeIndex:
+    global _AIBROTHER_INDEX
+    if _AIBROTHER_INDEX is None:
+        _AIBROTHER_INDEX = KnowledgeIndex(workspace)
+    return _AIBROTHER_INDEX
 
 
 class WebSocketConfig(Base):
@@ -695,6 +704,21 @@ class WebSocketChannel(BaseChannel):
         if got == "/api/commands":
             return self._handle_commands(request)
 
+        if got == "/api/aibrother/knowledge":
+            return self._handle_aibrother_knowledge(request)
+
+        if got == "/api/aibrother/file":
+            return self._handle_aibrother_file(request)
+
+        if got == "/api/aibrother/search":
+            return self._handle_aibrother_search(request)
+
+        if got == "/api/aibrother/ask":
+            return self._handle_aibrother_ask(request)
+
+        if got == "/api/aibrother/reindex":
+            return self._handle_aibrother_reindex(request)
+
         if got == "/api/webui/sidebar-state":
             return self._handle_webui_sidebar_state(request)
 
@@ -889,6 +913,66 @@ class WebSocketChannel(BaseChannel):
         if not self._check_api_token(request):
             return _http_error(401, "Unauthorized")
         return _http_json_response({"commands": builtin_command_palette()})
+
+    def _handle_aibrother_knowledge(self, request: WsRequest) -> Response:
+        if not self._check_api_token(request):
+            return _http_error(401, "Unauthorized")
+        index = _aibrother_index(get_workspace_path())
+        return _http_json_response(
+            {
+                "root": str(index.root),
+                "documents": [doc.to_dict() for doc in index.documents()],
+            }
+        )
+
+    def _handle_aibrother_file(self, request: WsRequest) -> Response:
+        if not self._check_api_token(request):
+            return _http_error(401, "Unauthorized")
+        query = _parse_query(request.path)
+        path = _query_first(query, "path") or ""
+        try:
+            payload = _aibrother_index(get_workspace_path()).read_file(path)
+        except FileNotFoundError:
+            return _http_error(404, "knowledge file not found")
+        except ValueError as exc:
+            return _http_error(400, str(exc))
+        return _http_json_response(payload)
+
+    def _handle_aibrother_search(self, request: WsRequest) -> Response:
+        if not self._check_api_token(request):
+            return _http_error(401, "Unauthorized")
+        query = _parse_query(request.path)
+        q = _query_first(query, "q") or ""
+        limit_raw = _query_first(query, "limit") or "8"
+        try:
+            limit = max(1, min(20, int(limit_raw)))
+        except ValueError:
+            limit = 8
+        evidence = _aibrother_index(get_workspace_path()).search(q, limit=limit)
+        return _http_json_response(
+            {"query": q, "evidence": [item.to_dict() for item in evidence]}
+        )
+
+    def _handle_aibrother_ask(self, request: WsRequest) -> Response:
+        if not self._check_api_token(request):
+            return _http_error(401, "Unauthorized")
+        query = _parse_query(request.path)
+        q = _query_first(query, "q") or ""
+        mode = _query_first(query, "mode") or "experiment"
+        payload = _aibrother_index(get_workspace_path()).answer(q, mode=mode)
+        return _http_json_response(payload)
+
+    def _handle_aibrother_reindex(self, request: WsRequest) -> Response:
+        if not self._check_api_token(request):
+            return _http_error(401, "Unauthorized")
+        global _AIBROTHER_INDEX
+        _AIBROTHER_INDEX = KnowledgeIndex(get_workspace_path())
+        return _http_json_response(
+            {
+                "ok": True,
+                "documents": [doc.to_dict() for doc in _AIBROTHER_INDEX.documents()],
+            }
+        )
 
     def _handle_webui_sidebar_state(self, request: WsRequest) -> Response:
         if not self._check_api_token(request):

@@ -1,4 +1,8 @@
 import type {
+  AIBrotherAskResponse,
+  AIBrotherDocument,
+  AIBrotherEvidence,
+  AIBrotherFile,
   ChatSummary,
   CliAppsPayload,
   ImageGenerationSettingsUpdate,
@@ -223,6 +227,63 @@ export async function listSlashCommands(
       icon: command.icon,
       argHint: command.arg_hint ?? "",
     }));
+}
+
+export async function fetchAIBrotherKnowledge(
+  token: string,
+  base: string = "",
+): Promise<{ root: string; documents: AIBrotherDocument[] }> {
+  return request<{ root: string; documents: AIBrotherDocument[] }>(
+    `${base}/api/aibrother/knowledge`,
+    token,
+  );
+}
+
+export async function fetchAIBrotherFile(
+  token: string,
+  path: string,
+  base: string = "",
+): Promise<AIBrotherFile> {
+  const query = new URLSearchParams();
+  query.set("path", path);
+  return request<AIBrotherFile>(`${base}/api/aibrother/file?${query}`, token);
+}
+
+export async function searchAIBrotherKnowledge(
+  token: string,
+  q: string,
+  limit = 8,
+  base: string = "",
+): Promise<{ query: string; evidence: AIBrotherEvidence[] }> {
+  const query = new URLSearchParams();
+  query.set("q", q);
+  query.set("limit", String(limit));
+  return request<{ query: string; evidence: AIBrotherEvidence[] }>(
+    `${base}/api/aibrother/search?${query}`,
+    token,
+  );
+}
+
+export async function askAIBrother(
+  token: string,
+  q: string,
+  mode: string,
+  base: string = "",
+): Promise<AIBrotherAskResponse> {
+  const query = new URLSearchParams();
+  query.set("q", q);
+  query.set("mode", mode);
+  return request<AIBrotherAskResponse>(`${base}/api/aibrother/ask?${query}`, token);
+}
+
+export async function reindexAIBrotherKnowledge(
+  token: string,
+  base: string = "",
+): Promise<{ ok: boolean; documents: AIBrotherDocument[] }> {
+  return request<{ ok: boolean; documents: AIBrotherDocument[] }>(
+    `${base}/api/aibrother/reindex`,
+    token,
+  );
 }
 
 export async function fetchSidebarState(

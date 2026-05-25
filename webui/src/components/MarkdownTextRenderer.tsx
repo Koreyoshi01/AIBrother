@@ -8,6 +8,10 @@ import remarkMath from "remark-math";
 
 import { CodeBlock } from "@/components/CodeBlock";
 import { FileReferenceChip, isLikelyFilePath } from "@/components/FileReferenceChip";
+import {
+  dispatchAIBrotherOpenFile,
+  getAIBrotherKnowledgePathFromLink,
+} from "@/lib/aibrother-links";
 import { cn } from "@/lib/utils";
 
 import "katex/dist/katex.min.css";
@@ -97,6 +101,22 @@ export default function MarkdownTextRenderer({
         );
       },
       a({ href, children: markdownChildren, ...props }) {
+        const knowledgePath = getAIBrotherKnowledgePathFromLink(href);
+        if (knowledgePath) {
+          return (
+            <a
+              href={href}
+              {...props}
+              className="text-primary underline underline-offset-2 hover:opacity-80"
+              onClick={(event) => {
+                event.preventDefault();
+                dispatchAIBrotherOpenFile(knowledgePath);
+              }}
+            >
+              {markdownChildren}
+            </a>
+          );
+        }
         return (
           <a
             href={href}

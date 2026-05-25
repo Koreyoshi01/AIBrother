@@ -170,6 +170,38 @@ export interface BootstrapResponse {
   model_name?: string | null;
 }
 
+export interface AIBrotherDocument {
+  path: string;
+  title: string;
+  category: string;
+  category_label: string;
+  preview: string;
+}
+
+export interface AIBrotherEvidence {
+  path: string;
+  title: string;
+  category: string;
+  category_label: string;
+  line: number;
+  snippet: string;
+}
+
+export interface AIBrotherFile {
+  path: string;
+  title: string;
+  category: string;
+  category_label: string;
+  content: string;
+}
+
+export interface AIBrotherAskResponse {
+  mode: string;
+  query: string;
+  answer: string;
+  evidence: AIBrotherEvidence[];
+}
+
 export interface SettingsPayload {
   agent: {
     model: string;
