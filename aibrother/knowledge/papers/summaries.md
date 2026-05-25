@@ -41,24 +41,26 @@
 - **要点**: 新型塔板设计使传质效率提高20%
 - **专利号**: CNxxxxxxxx
 
-## Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing, pages 28410–28427
-- **标题**: Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing, pages 28410–28427
+## REASONING BEYOND MAJORITY VOTE: AN EXPLAINABLE SPEECHLM FRAMEWORK FOR SPEECH EMOTION RECOGNITION Bo-Hao Su1, Hui-Ying Shih2, Jinchuan Tian1, Jiatong Shi1 Chi-Chun Lee2, Carlos Busso1, Shinji Watanabe1
+- **标题**: REASONING BEYOND MAJORITY VOTE: AN EXPLAINABLE SPEECHLM FRAMEWORK FOR SPEECH EMOTION RECOGNITION Bo-Hao Su1, Hui-Ying Shih2, Jinchuan Tian1, Jiatong Shi1 Chi-Chun Lee2, Carlos Busso1, Shinji Watanabe1
+- **来源文件**: 2509-24187v1_53b6cb85.pdf
+- **原文路径**: `knowledge/group_knowledge/uploads/2509-24187v1_53b6cb85.pdf`
+- **导入时间**: 2026-05-25 06:30 UTC
+- **要点**: We propose an explainable Speech Language Model (SpeechLM) framework that frames SER as a generative reasoning task. On MSP-Podcast v1.12, our model maintains improvements over zero-shot SpeechLM baselines, and produces rationales that human evaluators find plausible and well grounded.
+- **结论1**: We propose an explainable Speech Language Model (SpeechLM) framework that frames SER as a generative reasoning task.
+- **结论2**: On MSP-Podcast v1.12, our model maintains improvements over zero-shot SpeechLM baselines, and produces rationales that human evaluators find plausible and well grounded.
+- **标签**: REASONING BEYOND MAJORITY VOTE, REASONING, BEYOND, MAJORITY, VOTE, AN, EXPLAINABLE, SPEECHLM
+- **状态**: 自动生成摘要，建议人工核对
+
+## SimpleDoc: Multi-Modal Document Understanding with Dual-Cue Page Retrieval and Iterative Refinement
+- **标题**: SimpleDoc: Multi-Modal Document Understanding with Dual-Cue Page Retrieval and Iterative Refinement
 - **来源文件**: 2025-emnlp-main-1443_aefcef69.pdf
 - **原文路径**: `knowledge/group_knowledge/uploads/2025-emnlp-main-1443_aefcef69.pdf`
 - **导入时间**: 2026-05-25 05:46 UTC
-- **要点**: Document Visual Question Answering (DocVQA) is a practical yet challenging task, which is to ask questions based on documents while referring to multiple pages and different modalities of information, e.g., images and tables. To handle multi-modality, recent methods follow a similar Retrieval Augmented Generation (RAG) pipeline, but utilize Visual Language Models (VLMs) based embedding model to embed and retrieve relevant pages as images, and generate answers with VLMs that can accept an image as input. In this paper, we introduce SimpleDoc, a lightweight yet powerful retrieval-augmented framework for DocVQA. It boosts evidence page gathering by first retrieving candidates through embedding similarity and then filtering and re-ranking these candidates based on page summaries. A single VLM-based reasoner agent repeatedly invokes this dual-cue retriever, iteratively pulling fresh pages into a working memory until the question is confidently answered. SimpleDocoutperforms previous baselines by 3.2% on average on 4 DocVQA datasets with much fewer pages retrieved. Our code is available at https://github.com/ag2ai/SimpleDoc.
-- **关键结论**: 未识别到明确结论，需要人工补充。
-- **标签**: 论文, 文献, 已读文章
-- **状态**: 自动生成摘要，建议人工核对
-
-## Not All Features Matter:
-- **标题**: Not All Features Matter:
-- **来源文件**: 2304-01195v1_b87eac3b.pdf
-- **原文路径**: `knowledge/group_knowledge/uploads/2304-01195v1_b87eac3b.pdf`
-- **导入时间**: 2026-05-25 05:55 UTC
-- **要点**: The popularity of Contrastive Language-Image Pretraining (CLIP) has propelled its application to diverse downstream vision tasks. To improve its capacity on downstream tasks, few-shot learning has become a widely-adopted technique. However, existing methods either exhibit limited performance or suffer from excessive learnable parameters. In this paper, we propose APE, an Adaptive Prior rEﬁnement method for CLIP’s pre-trained knowledge, which achieves superior accuracy with high computational efﬁciency. Via a prior reﬁnement module, we analyze the inter-class disparity in the downstream data and decouple the domain-speciﬁc knowledge from the CLIP-extracted cache model. On top of that, we introduce two model variants, a training-free APE and a training-required APE-T. We explore the trilateral afﬁnities between the test image, prior cache model, and textual representations, and only enable a lightweight category-residual module to be trained. For the average accuracy over 11 benchmarks, both APE and APE-T attain state-of-the-art and respectively outperform the second-best by +1.59% and +1.99% under 16 shots with ×30 less learnable parameters. Code is available at https://github.com/y
-- **关键结论**: 未识别到明确结论，需要人工补充。
-- **标签**: 论文, 文献, 已读文章
+- **要点**: In this paper, we introduce SimpleDoc, a lightweight yet powerful retrieval-augmented framework for DocVQA. SimpleDocoutperforms previous baselines by 3.2% on average on 4 DocVQA datasets with much fewer pages retrieved.
+- **结论1**: In this paper, we introduce SimpleDoc, a lightweight yet powerful retrieval-augmented framework for DocVQA.
+- **结论2**: SimpleDocoutperforms previous baselines by 3.2% on average on 4 DocVQA datasets with much fewer pages retrieved.
+- **标签**: SimpleDoc, RAG, VLM, DocVQA, Multi-modal, Document Understanding
 - **状态**: 自动生成摘要，建议人工核对
 
 ## MS4UI: A Dataset for Multi-modal Summarization of User Interface Instructional Videos
@@ -66,17 +68,36 @@
 - **来源文件**: 2506-12623v1_cb344e93.pdf
 - **原文路径**: `knowledge/group_knowledge/uploads/2506-12623v1_cb344e93.pdf`
 - **导入时间**: 2026-05-25 05:59 UTC
-- **要点**: We study multi-modal summarization for instructional videos, whose goal is to provide users an efficient way to learn skills in the form of text instructions and key video frames. We observe that existing benchmarks focus on generic semantic-level video summarization, and are not suitable for providing step-by-step executable instructions and illustrations, both of which are crucial for instructional videos. We propose a novel benchmark for user interface (UI) instructional video summarization to fill the gap. We collect a dataset of 2,413 UI instructional videos, which spans over 167 hours. These videos are manually annotated for video segmentation, text summarization, and video summarization, which enable the comprehensive evaluations for concise and executable video summarization. We conduct extensive experiments on our collected MS4UI dataset, which suggest that state-of-the-art multi-modal summarization methods struggle on UI video summarization, and highlight the importance of new methods for UI instructional video summarization.
-- **关键结论**: 未识别到明确结论，需要人工补充。
-- **标签**: 论文, 文献, 已读文章
+- **要点**: We propose a novel benchmark for user interface (UI) instructional video summarization to fill the gap. We collect a dataset of 2,413 UI instructional videos, which spans over 167 hours. We conduct extensive experiments on our collected MS4UI dataset, which suggest that state-of-the-art multi-modal summarization methods struggle on UI video summarization, and highlight the importance of new methods for UI instructional video summarization.
+- **结论1**: We propose a novel benchmark for user interface (UI) instructional video summarization to fill the gap.
+- **结论2**: We collect a dataset of 2,413 UI instructional videos, which spans over 167 hours.
+- **结论3**: We conduct extensive experiments on our collected MS4UI dataset, which suggest that state-of-the-art multi-modal summarization methods struggle on UI video summarization, and highlight the importance of new methods for UI instructional video summarization.
+- **结论4**: We study multi-modal summarization for instructional videos, whose goal is to provide users an efficient way to learn skills in the form of text instructions and key video frames.
+- **标签**: MS4UI, UI, Multi-modal, Instructional Video
 - **状态**: 自动生成摘要，建议人工核对
 
-## ProGait: A Multi-Purpose Video Dataset and Benchmark for Transfemoral
-- **标题**: ProGait: A Multi-Purpose Video Dataset and Benchmark for Transfemoral
+## ProGait: A Multi-Purpose Video Dataset and Benchmark for Transfemoral Prosthesis Users
+- **标题**: ProGait: A Multi-Purpose Video Dataset and Benchmark for Transfemoral Prosthesis Users
 - **来源文件**: 2507-10223v1_83dbf78e.pdf
 - **原文路径**: `knowledge/group_knowledge/uploads/2507-10223v1_83dbf78e.pdf`
 - **导入时间**: 2026-05-25 06:07 UTC
-- **要点**: Prosthetic legs play a pivotal role in clinical rehabilitation, allowing individuals with lower-limb amputations the ability to regain mobility and improve their quality of life. Gait analysis is fundamental for optimizing prosthesis design and alignment, directly impacting the mobility and life quality of individuals with lower-limb amputations. Vision-based machine learning (ML) methods offer a scalable and non-invasive solution to gait analysis, but face challenges in correctly detecting and analyzing prosthesis, due to their unique appearances and new movement patterns. In this paper, we aim to bridge this gap by introducing a multi-purpose dataset, namely ProGait, to support multiple vision tasks including Video Object Segmentation, 2D Human Pose Estimation, and Gait Analysis (GA). ProGait provides 412 video clips from four aboveknee amputees when testing multiple newly-fitted prosthetic legs through walking trials, and depicts the presence, contours, poses, and gait patterns of human subjects with transfemoral prosthetic legs. Alongside the dataset itself, we also present benchmark tasks and fine-tuned baseline models to illustrate the practical application and performance of
-- **关键结论**: 未识别到明确结论，需要人工补充。
-- **标签**: 论文, 文献, 已读文章
+- **要点**: We compared our baseline models against pre-trained vision models, demonstrating improved generalizability when applying the ProGait dataset for prosthesis-specific tasks. Alongside the dataset itself, we also present benchmark tasks and fine-tuned baseline models to illustrate the practical application and performance of the ProGait dataset. Our code is available at https://github.com/pittisl/ProGait and dataset at https://huggingface.co/datasets/ ericyxy98/ProGait.
+- **结论1**: We compared our baseline models against pre-trained vision models, demonstrating improved generalizability when applying the ProGait dataset for prosthesis-specific tasks.
+- **结论2**: Alongside the dataset itself, we also present benchmark tasks and fine-tuned baseline models to illustrate the practical application and performance of the ProGait dataset.
+- **结论3**: Our code is available at https://github.com/pittisl/ProGait and dataset at https://huggingface.co/datasets/ ericyxy98/ProGait.
+- **结论4**: Prosthetic legs play a pivotal role in clinical rehabilitation, allowing individuals with lower-limb amputations the ability to regain mobility and improve their quality of life.
+- **标签**: ProGait, ML, GA, Gait Analysis, Prosthetics
+- **状态**: 自动生成摘要，建议人工核对
+
+## Not All Features Matter:
+- **标题**: Not All Features Matter:
+- **来源文件**: 2304-01195v1_b87eac3b.pdf
+- **原文路径**: `knowledge/group_knowledge/uploads/2304-01195v1_b87eac3b.pdf`
+- **导入时间**: 2026-05-25 05:55 UTC
+- **要点**: For the average accuracy over 11 benchmarks, both APE and APE-T attain state-of-the-art and respectively outperform the second-best by +1.59% and +1.99% under 16 shots with ×30 less learnable parameters. In this paper, we propose APE, an Adaptive Prior rEﬁnement method for CLIP’s pre-trained knowledge, which achieves superior accuracy with high computational efﬁciency. On top of that, we introduce two model variants, a training-free APE and a training-required APE-T.
+- **结论1**: For the average accuracy over 11 benchmarks, both APE and APE-T attain state-of-the-art and respectively outperform the second-best by +1.59% and +1.99% under 16 shots with ×30 less learnable parameters.
+- **结论2**: In this paper, we propose APE, an Adaptive Prior rEﬁnement method for CLIP’s pre-trained knowledge, which achieves superior accuracy with high computational efﬁciency.
+- **结论3**: On top of that, we introduce two model variants, a training-free APE and a training-required APE-T.
+- **结论4**: To improve its capacity on downstream tasks, few-shot learning has become a widely-adopted technique.
+- **标签**: Not All Features Matter, CLIP, APE, Few-shot
 - **状态**: 自动生成摘要，建议人工核对

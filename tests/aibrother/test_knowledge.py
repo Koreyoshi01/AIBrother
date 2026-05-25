@@ -121,6 +121,39 @@ class AIBrotherKnowledgeTests(unittest.TestCase):
         hits = index.search("CO2 capture", limit=5)
         self.assertTrue(any("papers/summaries.md" in item.path for item in hits))
 
+    def test_paper_summary_uses_title_findings_and_tags(self) -> None:
+        from nanobot.aibrother.knowledge import (
+            _paper_analysis_text,
+            _paper_key_findings_from_abstract,
+            _paper_tags_from_text,
+            _paper_title_from_text,
+        )
+
+        sample = "\n".join(
+            [
+                "Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing, pages 28410–28427",
+                "SimpleDoc: Multi-Modal Document Understanding with Dual-Cue Page",
+                "Retrieval and Iterative Refinement",
+                "Chelsi Jain1,*, Yiran Wu2",
+                "1Oregon State University",
+                "Abstract",
+                "Document Visual Question Answering (DocVQA) is a practical yet challenging task.",
+                "In this paper, we introduce SimpleDoc, a lightweight yet powerful retrieval-augmented framework for DocVQA.",
+                "SimpleDoc outperforms previous baselines by 3.2% on average on 4 DocVQA datasets with much fewer pages retrieved.",
+            ]
+        )
+        abstract = _paper_analysis_text(sample)
+        title = _paper_title_from_text(sample)
+        findings = _paper_key_findings_from_abstract(abstract)
+        tags = _paper_tags_from_text(title, abstract)
+
+        self.assertIn("SimpleDoc", title)
+        self.assertNotIn("Proceedings of the", title)
+        self.assertTrue(any("SimpleDoc" in item for item in findings))
+        self.assertTrue(any("3.2%" in item for item in findings))
+        self.assertIn("DocVQA", tags)
+        self.assertIn("SimpleDoc", tags)
+
     def test_read_file_marks_pdf_documents(self) -> None:
         import tempfile
 

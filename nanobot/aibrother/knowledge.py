@@ -13,11 +13,6 @@ from pathlib import Path
 from nanobot.utils.document import extract_text
 from nanobot.utils.helpers import safe_filename
 
-try:
-    from aibrother.resources import analyze_resource
-except ImportError:  # pragma: no cover - optional when aibrother is not on path
-    analyze_resource = None  # type: ignore[assignment,misc]
-
 
 _CATEGORY_LABELS = {
     "lab_manual": "实验手册",
@@ -493,32 +488,11 @@ class KnowledgeIndex:
         if not extracted or extracted.startswith("[error:"):
             extracted = ""
         analysis_text = _paper_analysis_text(extracted)
-        heading = _paper_heading(original_name, extracted)
-        if analyze_resource is not None:
-            analysis = analyze_resource(
-                analysis_text,
-                "read_papers",
-                title=heading,
-                filename=original_name,
-            )
-            title = str(analysis.get("title") or heading)
-            summary = str(analysis.get("summary") or "")
-            key_findings = [
-                str(item) for item in analysis.get("key_findings", []) if str(item).strip()
-            ]
-            tags = [str(item) for item in analysis.get("tags", []) if str(item).strip()]
-        else:
-            title = heading
-            summary = extracted[:1200] if analysis_text else "未能从 PDF 中抽取可用正文。"
-            key_findings = []
-            tags = ["论文"]
-        if not summary and key_findings:
-            summary = "；".join(key_findings[:3])
-        if (
-            not summary
-            or "未识别到明确结论" in summary
-            or summary == "未能从原文件中抽取可用正文。"
-        ) and analysis_text:
+        title = _paper_title_from_text(extracted) or _paper_heading(original_name, extracted)
+        key_findings = _paper_key_findings_from_abstract(analysis_text)
+        tags = _paper_tags_from_text(title, analysis_text)
+        summary = _paper_brief_summary(analysis_text, key_findings)
+        if not summary and analysis_text:
             summary = re.sub(r"\s+", " ", analysis_text).strip()[:1200]
         if not summary:
             summary = "未能从 PDF 中抽取可用正文，请人工补充摘要。"
@@ -565,6 +539,12 @@ def _paper_summary_needs_refresh(summaries_text: str, pdf_rel: str) -> bool:
         "Tip-Adapter",
         "--- Page 1 ---",
         "未识别到明确结论",
+        "Proceedings of the",
+        "Not All Features Matter:",
+        "**关键结论**:",
+        "Shengyu Dai",
+        "arXiv:",
+        "Xiangyu Yin",
     )
     return any(marker in block for marker in weak_markers) or (
         "**要点**: 未识别到明确结论" in block
@@ -614,42 +594,190 @@ def _paper_title_from_text(text: str) -> str:
         return ""
     normalized = _normalize_pdf_text(text)
     lines = [line.strip() for line in normalized.splitlines() if line.strip()]
-    skip_prefixes = (
-        "abstract",
-        "introduction",
-        "arxiv",
-        "doi",
-        "keywords",
-        "published",
-        "preprint",
-        "page ",
-        "figure ",
-        "table ",
-        "--- page",
+    abstract_idx = next(
+        (index for index, line in enumerate(lines) if line.lower().startswith("abstract")),
+        len(lines),
     )
-    candidates: list[str] = []
-    for line in lines[:40]:
-        lowered = line.lower()
-        if any(lowered.startswith(prefix) for prefix in skip_prefixes):
+    title_lines: list[str] = []
+    for line in lines[:abstract_idx]:
+        if _is_venue_boilerplate(line) or _is_author_line(line):
             continue
-        if re.fullmatch(r"[\d\s\-–—]+", line):
-            continue
-        if "@" in line or "http" in lowered or "arxiv:" in lowered:
-            continue
-        if re.match(r"^\d+\s", line):
-            continue
-        if len(line) < 12 or len(line) > 220:
-            continue
-        if re.search(r"[\u4e00-\u9fff]", line) or re.search(r"[A-Za-z]{3,}", line):
-            candidates.append(line)
-    if not candidates:
+        title_lines.append(line)
+    return _merge_title_lines(title_lines)
+
+
+def _is_venue_boilerplate(line: str) -> bool:
+    lowered = line.lower()
+    patterns = (
+        "proceedings of the",
+        "conference on",
+        "association for computational linguistics",
+        "pages ",
+        "©",
+        "copyright",
+        "equal contribution",
+        "workshop on",
+        "transactions on",
+        "journal of",
+        "accepted at",
+        "under review",
+        "preprint",
+        "arxiv:",
+    )
+    if any(token in lowered for token in patterns):
+        return True
+    if re.search(r"\bpages?\s+\d", lowered):
+        return True
+    if re.fullmatch(r"\d{4,5}", line.strip()):
+        return True
+    if re.search(r"\[[a-z\.]+\]", lowered) and re.search(r"\d{4}", line):
+        return True
+    return False
+
+
+def _is_author_line(line: str) -> bool:
+    lowered = line.lower()
+    if "@" in line:
+        return True
+    if re.search(r"[A-Za-z'\-]+\d+[,\*]", line):
+        return True
+    if re.search(r"\b(university|institute|laboratory|college|inc\.|ltd\.|corporation)\b", lowered):
+        return True
+    if re.search(r"\b\d{1,2}\s*,\s*\*", line):
+        return True
+    if re.match(r"^[\{\[].*[\}\]]@", line):
+        return True
+    if re.match(r"^[A-Z][A-Za-z\-']+(?:,\s*[A-Z][A-Za-z\-']+){2,}", line) and re.search(r"\d", line):
+        return True
+    tokens = line.split()
+    if len(tokens) >= 4 and ":" not in line:
+        name_like = sum(1 for token in tokens if re.match(r"^[A-Z][A-Za-z'\-]+$", token))
+        if name_like >= 4 and len(line) < 220:
+            return True
+    return False
+
+
+def _merge_title_lines(lines: list[str]) -> str:
+    if not lines:
         return ""
-    title = candidates[0]
-    if len(candidates) > 1 and len(title) < 48 and not title.endswith((".", "?", "!")):
-        second = candidates[1]
-        if second[:1].islower() or second.lower().startswith(("of ", "for ", "on ", "in ")):
-            title = f"{title} {second}"
-    return title
+    title = lines[0]
+    merged_count = 1
+    for extra in lines[1:4]:
+        if extra.lower().startswith(("abstract", "keywords", "index terms")):
+            break
+        if _is_author_line(extra) or _is_venue_boilerplate(extra):
+            break
+        if len(title) >= 160:
+            break
+        if merged_count >= 2 and ":" in title:
+            break
+        title = f"{title} {extra}"
+        merged_count += 1
+    return re.sub(r"\s+", " ", title).strip()
+
+
+def _paper_key_findings_from_abstract(text: str) -> list[str]:
+    if not text:
+        return []
+    normalized = re.sub(r"\s+", " ", text).strip()
+    sentences = [
+        sentence.strip()
+        for sentence in re.split(r"(?<=[.!?])\s+", normalized)
+        if sentence.strip()
+    ]
+    boost_patterns = (
+        r"\bwe introduce\b",
+        r"\bwe propose\b",
+        r"\bwe present\b",
+        r"\bwe collect\b",
+        r"\bwe study\b",
+        r"\boutperform",
+        r"\bachieve[sd]?\b",
+        r"\bimprov",
+        r"\b\d+(?:\.\d+)?%",
+        r"\bstate-of-the-art\b",
+        r"\bnovel\b",
+        r"\bframework\b",
+        r"\bdataset\b",
+        r"\bbenchmark\b",
+        r"\bresults?\b",
+    )
+    scored: list[tuple[int, str]] = []
+    for sentence in sentences:
+        if len(sentence) < 30 or len(sentence) > 260:
+            continue
+        score = sum(1 for pattern in boost_patterns if re.search(pattern, sentence, re.I))
+        if score <= 0:
+            continue
+        scored.append((score, sentence))
+    scored.sort(key=lambda item: (-item[0], len(item[1])))
+    findings = [sentence for _, sentence in scored[:4]]
+    if findings:
+        return findings
+    fallback = [sentence for sentence in sentences if 40 <= len(sentence) <= 260]
+    if len(fallback) >= 2:
+        return [fallback[0], fallback[min(2, len(fallback) - 1)]]
+    if fallback:
+        return [fallback[0]]
+    return []
+
+
+def _paper_tags_from_text(title: str, text: str) -> list[str]:
+    combined = f"{title}\n{text}"
+    tags: list[str] = []
+    if ":" in title:
+        method = title.split(":", 1)[0].strip()
+        if 2 <= len(method) <= 40:
+            tags.append(method)
+    for acronym in re.findall(r"\b[A-Z]{2,}[A-Z0-9]*\b", combined):
+        if acronym in {"PDF", "URL", "UTC", "ACL", "DOI", "ET", "AL", "AI"}:
+            continue
+        if len(acronym) <= 12:
+            tags.append(acronym)
+    keyword_map = (
+        ("document visual question answering", "DocVQA"),
+        ("retrieval augmented generation", "RAG"),
+        ("retrieval-augmented generation", "RAG"),
+        ("visual language model", "VLM"),
+        ("multi-modal", "Multi-modal"),
+        ("multimodal", "Multi-modal"),
+        ("instructional video", "Instructional Video"),
+        ("document understanding", "Document Understanding"),
+        ("contrastive language-image", "CLIP"),
+        ("few-shot", "Few-shot"),
+        ("gait", "Gait Analysis"),
+        ("prosthetic", "Prosthetics"),
+        ("co2", "CO2"),
+    )
+    lowered = combined.lower()
+    for phrase, label in keyword_map:
+        if phrase in lowered and label not in tags:
+            tags.append(label)
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for tag in tags:
+        key = tag.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(tag)
+    return deduped[:8] or ["Paper"]
+
+
+def _paper_brief_summary(text: str, key_findings: list[str]) -> str:
+    if key_findings:
+        return " ".join(key_findings[:3])[:900]
+    if not text:
+        return ""
+    normalized = re.sub(r"\s+", " ", text).strip()
+    sentences = [
+        sentence.strip()
+        for sentence in re.split(r"(?<=[.!?])\s+", normalized)
+        if len(sentence.strip()) >= 40
+    ]
+    if len(sentences) >= 2:
+        return f"{sentences[0]} {sentences[1]}"[:900]
+    return normalized[:900]
 
 
 def _normalize_pdf_text(text: str) -> str:
@@ -697,8 +825,8 @@ def _format_paper_summary_section(
         f"- **要点**: {summary.strip()}",
     ]
     if key_findings:
-        findings = "；".join(key_findings[:3])
-        lines.append(f"- **关键结论**: {findings}")
+        for idx, finding in enumerate(key_findings[:4], start=1):
+            lines.append(f"- **结论{idx}**: {finding.strip()}")
     if tags:
         lines.append(f"- **标签**: {', '.join(tags[:8])}")
     lines.append("- **状态**: 自动生成摘要，建议人工核对")
