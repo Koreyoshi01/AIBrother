@@ -1,7 +1,7 @@
 {
   "agents": {
     "defaults": {
-      "workspace": "D:\\作业\\保研\\学校\\中关村\\黑客松\\code\\AIBrother\\aibrother",
+      "workspace": "your-aibrother-workspace",
       "model": "anthropic/claude-sonnet-4-6",
       "provider": "auto",
       "maxTokens": 4096,
@@ -21,7 +21,7 @@
   },
   "providers": {
     "anthropic": {
-      "apiKey": "sk-858d18e745394b16bd5d520d942b5c90"
+      "apiKey": "your-api-key-here"
     }
   },
   "tools": {
