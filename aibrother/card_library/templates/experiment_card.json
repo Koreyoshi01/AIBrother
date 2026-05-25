@@ -1,0 +1,19 @@
+{
+  "id": "template-experiment-card",
+  "type": "ExperimentCard",
+  "title": "Experiment log",
+  "summary": "A compact record for an experiment objective, observations, and next steps.",
+  "content": "Use this card to preserve experiment progress before it becomes a report.",
+  "tags": [
+    "experiment",
+    "template"
+  ],
+  "source": {},
+  "status": "draft",
+  "evidence": [],
+  "relations": [],
+  "objective": "",
+  "observations": [],
+  "problems": [],
+  "next_steps": []
+}

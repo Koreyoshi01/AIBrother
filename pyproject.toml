@@ -126,6 +126,9 @@ allow-direct-references = true
 
 [tool.hatch.build]
 include = [
+    "aibrother/**/*.py",
+    "aibrother/**/*.md",
+    "aibrother/**/*.json",
     "nanobot/**/*.py",
     "nanobot/templates/**/*.md",
     "nanobot/skills/**/*.md",
@@ -140,7 +143,7 @@ artifacts = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["nanobot"]
+packages = ["nanobot", "aibrother"]
 
 [tool.hatch.build.targets.wheel.sources]
 "nanobot" = "nanobot"
@@ -151,6 +154,7 @@ packages = ["nanobot"]
 
 [tool.hatch.build.targets.sdist]
 include = [
+    "aibrother/",
     "nanobot/",
     "nanobot/web/dist/",
     "bridge/",

@@ -1,0 +1,20 @@
+{
+  "id": "template-paper-card",
+  "type": "PaperCard",
+  "title": "Paper reading note",
+  "summary": "A structured paper note for research questions, methods, results, and takeaways.",
+  "content": "Use this card to turn a paper into reusable lab knowledge.",
+  "tags": [
+    "paper",
+    "template"
+  ],
+  "source": {},
+  "status": "draft",
+  "evidence": [],
+  "relations": [],
+  "research_question": "",
+  "method": "",
+  "key_results": [],
+  "limitations": [],
+  "takeaways": []
+}

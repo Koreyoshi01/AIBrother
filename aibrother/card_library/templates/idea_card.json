@@ -1,0 +1,20 @@
+{
+  "id": "template-idea-card",
+  "type": "IdeaCard",
+  "title": "Research idea",
+  "summary": "A card for turning a rough idea into a hypothesis and validation plan.",
+  "content": "Use this card before spending experiment time on an untested direction.",
+  "tags": [
+    "idea",
+    "template"
+  ],
+  "source": {},
+  "status": "draft",
+  "evidence": [],
+  "relations": [],
+  "problem": "",
+  "hypothesis": "",
+  "proposed_method": "",
+  "risks": [],
+  "validation_plan": []
+}

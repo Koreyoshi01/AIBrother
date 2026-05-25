@@ -1,0 +1,19 @@
+{
+  "id": "template-report-card",
+  "type": "ReportCard",
+  "title": "Progress report",
+  "summary": "A report card for progress, blockers, next plan, and slide outline.",
+  "content": "Use this card to prepare group meeting updates or weekly reports.",
+  "tags": [
+    "report",
+    "template"
+  ],
+  "source": {},
+  "status": "draft",
+  "evidence": [],
+  "relations": [],
+  "progress": [],
+  "problems": [],
+  "next_plan": [],
+  "slides_outline": []
+}

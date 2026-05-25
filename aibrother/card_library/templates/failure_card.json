@@ -1,0 +1,19 @@
+{
+  "id": "template-failure-card",
+  "type": "FailureCard",
+  "title": "Failure analysis",
+  "summary": "A record for failed runs, suspected causes, fixes, and lessons.",
+  "content": "Use this card to prevent repeated troubleshooting work.",
+  "tags": [
+    "failure",
+    "template"
+  ],
+  "source": {},
+  "status": "draft",
+  "evidence": [],
+  "relations": [],
+  "failure_event": "",
+  "suspected_causes": [],
+  "fix_or_workaround": "",
+  "lessons": []
+}

@@ -1,0 +1,19 @@
+{
+  "id": "template-meeting-card",
+  "type": "MeetingCard",
+  "title": "Weekly research meeting",
+  "summary": "A structured record for one research meeting.",
+  "content": "Use this card to keep meeting notes searchable and actionable.",
+  "tags": [
+    "meeting",
+    "template"
+  ],
+  "source": {},
+  "status": "draft",
+  "evidence": [],
+  "relations": [],
+  "key_points": [],
+  "decisions": [],
+  "tasks": [],
+  "questions": []
+}
