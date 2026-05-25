@@ -100,9 +100,16 @@ describe("ThreadComposer — image attachments", () => {
     fireEvent.keyDown(textarea, { key: "Enter" });
 
     expect(onSend).toHaveBeenCalledTimes(1);
-    const [content, attachments] = onSend.mock.calls[0];
+    const [content, attachments, options] = onSend.mock.calls[0];
     expect(content).toBe("请总结这份 PDF");
     expect(attachments).toBeUndefined();
+    expect(options?.knowledgeImports).toEqual([
+      expect.objectContaining({
+        filename: "report.pdf",
+        path: "knowledge/group_knowledge/uploads/test.md",
+        sizeBytes: expect.any(Number),
+      }),
+    ]);
   });
 
   it("imports a picked TXT file into the knowledge base", async () => {

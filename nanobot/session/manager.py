@@ -206,6 +206,19 @@ class Session:
                 if mcp_lines:
                     breadcrumbs = "\n".join(mcp_lines)
                     content = f"{content}\n{breadcrumbs}" if content else breadcrumbs
+            knowledge_imports = message.get("knowledge_imports")
+            if (
+                role == "user"
+                and isinstance(knowledge_imports, list)
+                and knowledge_imports
+                and isinstance(content, str)
+            ):
+                from nanobot.aibrother.knowledge_import_utils import replay_breadcrumbs
+
+                ki_lines = replay_breadcrumbs(knowledge_imports)
+                if ki_lines:
+                    breadcrumbs = "\n".join(ki_lines)
+                    content = f"{content}\n{breadcrumbs}" if content else breadcrumbs
             if include_timestamps:
                 content = self._annotate_message_time(message, content)
             if role == "assistant" and isinstance(content, str) and not content.strip():

@@ -54,6 +54,7 @@ import {
 import { useClipboardAndDrop, extractImageFilesFromPaste } from "@/hooks/useClipboardAndDrop";
 import { ACCEPT_ATTR } from "@/lib/fileAttach";
 import type { SendImage, SendOptions } from "@/hooks/useNanobotStream";
+import type { KnowledgeImportRef } from "@/lib/knowledgeImportMessage";
 import type {
   CliAppInfo,
   GoalStateWsPayload,
@@ -916,10 +917,25 @@ export function ThreadComposer({
   const submit = useCallback(() => {
     if (!canSend) return;
     const trimmed = value.trim();
+    const knowledgeImports: KnowledgeImportRef[] = images
+      .filter(
+        (img): img is AttachedImage & { knowledgePath: string } =>
+          img.status === "imported" && typeof img.knowledgePath === "string",
+      )
+      .map((img) => ({
+        filename: img.file.name,
+        path: img.knowledgePath,
+        sizeBytes: img.file.size,
+        mimeType: img.file.type || undefined,
+        ...(img.knowledgeTitle ? { title: img.knowledgeTitle } : {}),
+      }));
     const attachedCliApps = activeCliMentionApps.map(cliAppMentionPayload);
     const attachedMcpPresets = activeMcpPresetMentions.map(mcpPresetMentionPayload);
     const options: SendOptions | undefined =
-      imageMode || attachedCliApps.length > 0 || attachedMcpPresets.length > 0
+      imageMode
+      || attachedCliApps.length > 0
+      || attachedMcpPresets.length > 0
+      || knowledgeImports.length > 0
         ? {
             ...(imageMode
               ? {
@@ -931,6 +947,7 @@ export function ThreadComposer({
               : {}),
             ...(attachedCliApps.length > 0 ? { cliApps: attachedCliApps } : {}),
             ...(attachedMcpPresets.length > 0 ? { mcpPresets: attachedMcpPresets } : {}),
+            ...(knowledgeImports.length > 0 ? { knowledgeImports } : {}),
           }
         : undefined;
     onSend(trimmed, undefined, options);
@@ -948,6 +965,7 @@ export function ThreadComposer({
     clear,
     imageAspectRatio,
     imageMode,
+    images,
     onSend,
     resizeTextarea,
     value,

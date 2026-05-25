@@ -6,18 +6,20 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Check, ChevronRight, Copy, FileIcon, ImageIcon, PlaySquare, Sparkles, Wrench } from "lucide-react";
+import { Check, ChevronRight, Copy, FileIcon, FileText, ImageIcon, PlaySquare, Sparkles, Wrench } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { CliAppMentionText } from "@/components/CliAppMentionText";
 import { ImageLightbox } from "@/components/ImageLightbox";
 import { MarkdownText, preloadMarkdownText } from "@/components/MarkdownText";
+import { formatFileSize, formatTurnLatency } from "@/lib/format";
+import { knowledgeImportKindLabel } from "@/lib/knowledgeImportMessage";
 import { cn } from "@/lib/utils";
-import { formatTurnLatency } from "@/lib/format";
 import type {
   CliAppInfo,
   McpPresetInfo,
   UICliAppAttachment,
+  UIKnowledgeImport,
   UIMcpPresetAttachment,
   UIImage,
   UIMediaAttachment,
@@ -89,8 +91,10 @@ export function MessageBubble({
   if (message.role === "user") {
     const images = message.images ?? [];
     const media = message.media ?? [];
+    const knowledgeImports = message.knowledgeImports ?? [];
     const hasImages = images.length > 0;
     const hasMedia = media.length > 0;
+    const hasKnowledgeImports = knowledgeImports.length > 0;
     const hasText = message.content.trim().length > 0;
     return (
       <div
@@ -99,6 +103,9 @@ export function MessageBubble({
           baseAnim,
         )}
       >
+        {hasKnowledgeImports ? (
+          <KnowledgeImportCards imports={knowledgeImports} align="right" />
+        ) : null}
         {hasImages ? <UserImages images={images} align="right" /> : null}
         {!hasImages && hasMedia ? (
           <MessageMedia media={media} align="right" />
@@ -699,6 +706,62 @@ export function TraceGroup({ message, animClass }: TraceGroupProps) {
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+function KnowledgeImportCards({
+  imports,
+  align,
+}: {
+  imports: UIKnowledgeImport[];
+  align: "left" | "right";
+}) {
+  return (
+    <div
+      className={cn(
+        "flex max-w-full flex-wrap gap-2",
+        align === "right" ? "justify-end" : "justify-start",
+      )}
+    >
+      {imports.map((item) => (
+        <KnowledgeImportCard key={`${item.path}:${item.filename}`} item={item} />
+      ))}
+    </div>
+  );
+}
+
+function KnowledgeImportCard({ item }: { item: UIKnowledgeImport }) {
+  const kind = knowledgeImportKindLabel(item.filename, item.mimeType);
+  const isPdf = kind === "PDF";
+  const meta = item.sizeBytes != null ? `${kind} ${formatFileSize(item.sizeBytes)}` : kind;
+
+  return (
+    <div
+      className={cn(
+        "flex min-w-[min(100%,14rem)] max-w-[18rem] items-center gap-3",
+        "rounded-xl border border-border/80 bg-background px-3 py-2.5 shadow-sm",
+      )}
+    >
+      <div
+        className={cn(
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-md",
+          isPdf ? "bg-[#E5252A] text-white" : "bg-muted text-muted-foreground",
+        )}
+        aria-hidden
+      >
+        {isPdf ? (
+          <FileText className="h-5 w-5" strokeWidth={2.25} />
+        ) : (
+          <FileIcon className="h-4 w-4" />
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[14px] font-semibold leading-tight text-foreground">
+          {item.filename}
+        </p>
+        <p className="mt-0.5 truncate text-[12px] text-muted-foreground">{meta}</p>
+      </div>
     </div>
   );
 }

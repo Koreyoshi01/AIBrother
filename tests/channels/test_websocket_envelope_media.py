@@ -143,6 +143,42 @@ async def test_message_forwards_normalized_cli_app_attachments() -> None:
 
 
 @pytest.mark.asyncio
+async def test_message_forwards_normalized_knowledge_imports() -> None:
+    channel = _make_channel()
+    mock_conn = AsyncMock()
+    envelope = {
+        "type": "message",
+        "chat_id": "abc123",
+        "content": "请总结这篇论文",
+        "webui": True,
+        "knowledge_imports": [
+            {
+                "filename": "2506.12623v1.pdf",
+                "path": "knowledge/group_knowledge/uploads/2506-12623v1_cb344e93.pdf",
+                "title": "2506 12623v1",
+                "size_bytes": 1234567,
+                "mime_type": "application/pdf",
+            },
+            {"filename": "bad.pdf", "path": "../evil.pdf"},
+        ],
+    }
+
+    await channel._dispatch_envelope(mock_conn, "client-1", envelope)
+
+    channel._handle_message.assert_awaited_once()
+    metadata = channel._handle_message.call_args.kwargs["metadata"]
+    assert metadata["webui"] is True
+    assert metadata["knowledge_imports"] == [{
+        "filename": "2506.12623v1.pdf",
+        "path": "knowledge/group_knowledge/uploads/2506-12623v1_cb344e93.pdf",
+        "title": "2506 12623v1",
+        "size_bytes": 1234567,
+        "mime_type": "application/pdf",
+    }]
+    assert channel._handle_message.call_args.kwargs["content"] == "请总结这篇论文"
+
+
+@pytest.mark.asyncio
 async def test_message_with_single_image_forwards_saved_path(tmp_path) -> None:
     channel = _make_channel()
     mock_conn = AsyncMock()

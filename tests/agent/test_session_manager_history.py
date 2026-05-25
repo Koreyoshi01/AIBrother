@@ -398,6 +398,31 @@ def test_get_history_synthesizes_cli_app_attachment_breadcrumb():
     }]
 
 
+def test_get_history_synthesizes_knowledge_import_breadcrumb():
+    session = Session(key="test:knowledge-import")
+    session.messages.append(
+        {
+            "role": "user",
+            "content": "请总结这篇论文",
+            "knowledge_imports": [{
+                "filename": "2506.12623v1.pdf",
+                "path": "knowledge/group_knowledge/uploads/2506-12623v1_cb344e93.pdf",
+            }],
+        }
+    )
+
+    history = session.get_history(max_messages=500)
+
+    assert history == [{
+        "role": "user",
+        "content": (
+            "请总结这篇论文\n"
+            "[Knowledge Import: 2506.12623v1.pdf → "
+            "knowledge/group_knowledge/uploads/2506-12623v1_cb344e93.pdf; tool=read_file]"
+        ),
+    }]
+
+
 def test_get_history_ignores_media_kwarg_on_non_user_rows():
     """``media`` only ever appears on user entries in practice, but the
     synthesizer must be defensive: assistants / tools with list content

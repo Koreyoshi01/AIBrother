@@ -30,6 +30,24 @@ _INLINE_MARKDOWN_IMAGE_EXTS: frozenset[str] = frozenset({
 })
 
 
+def _knowledge_import_ui_item(item: dict[str, Any]) -> dict[str, Any]:
+    """Map persisted transcript kwargs to WebUI camelCase message fields."""
+    row: dict[str, Any] = {
+        "filename": str(item.get("filename") or ""),
+        "path": str(item.get("path") or ""),
+    }
+    title = item.get("title")
+    if isinstance(title, str) and title.strip():
+        row["title"] = title.strip()
+    size_bytes = item.get("size_bytes")
+    if isinstance(size_bytes, (int, float)) and size_bytes >= 0:
+        row["sizeBytes"] = int(size_bytes)
+    mime_type = item.get("mime_type")
+    if isinstance(mime_type, str) and mime_type.strip():
+        row["mimeType"] = mime_type.strip()
+    return row
+
+
 def rewrite_local_markdown_images(
     text: str,
     *,
@@ -519,6 +537,13 @@ def replay_transcript_to_ui_messages(
             if isinstance(mcp_presets, list) and mcp_presets:
                 row["mcpPresets"] = [
                     dict(preset) for preset in mcp_presets if isinstance(preset, dict)
+                ]
+            knowledge_imports = rec.get("knowledge_imports")
+            if isinstance(knowledge_imports, list) and knowledge_imports:
+                row["knowledgeImports"] = [
+                    _knowledge_import_ui_item(item)
+                    for item in knowledge_imports
+                    if isinstance(item, dict)
                 ]
             messages.append(row)
             continue

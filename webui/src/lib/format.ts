@@ -130,3 +130,10 @@ export function formatTurnLatency(ms: number, locale?: string): string {
   }).format(remSec);
   return `${minStr}\u00a0${secStr}`;
 }
+
+/** Compact byte size for attachment cards (matches composer chip formatting). */
+export function formatFileSize(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(2)} MB`;
+}

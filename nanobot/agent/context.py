@@ -13,6 +13,7 @@ from nanobot.agent.skills import SkillsLoader
 from nanobot.agent.tools import mcp as mcp_tools
 from nanobot.agent.tools.registry import ToolRegistry
 from nanobot.bus.events import InboundMessage
+from nanobot.aibrother import knowledge_import_utils
 from nanobot.cli_apps import utils as cli_app_utils
 from nanobot.session.goal_state import goal_state_runtime_lines
 from nanobot.utils.helpers import (
@@ -25,13 +26,18 @@ from nanobot.utils.prompt_templates import render_template
 
 def session_extra(metadata: Mapping[str, Any] | None) -> dict[str, Any]:
     """Return persisted kwargs for turn-attached capabilities."""
-    return cli_app_utils.session_extra(metadata) | mcp_tools.session_extra(metadata)
+    return (
+        cli_app_utils.session_extra(metadata)
+        | mcp_tools.session_extra(metadata)
+        | knowledge_import_utils.session_extra(metadata)
+    )
 
 
 def runtime_lines(state: Any, msg: Any, workspace: Path, *, skip: bool = False) -> list[str]:
     """Return model-visible runtime annotations for turn-attached capabilities."""
     return [
         *cli_app_utils.runtime_lines(msg, workspace, skip=skip),
+        *knowledge_import_utils.runtime_lines(msg, skip=skip),
         *mcp_tools.runtime_lines(
             msg,
             configured_server_names=set(state._mcp_servers),

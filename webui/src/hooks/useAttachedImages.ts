@@ -33,6 +33,8 @@ export interface AttachedImage {
   normalized?: boolean;
   /** Knowledge-base path after a successful import. */
   knowledgePath?: string;
+  /** Document title returned by the knowledge index. */
+  knowledgeTitle?: string;
   /** Human-readable validation / encoding error when ``status === "error"``. */
   error?: AttachmentError;
 }
@@ -143,6 +145,7 @@ export function useAttachedImages(
           setEntry(entryId, {
             status: "imported",
             knowledgePath: result.path,
+            knowledgeTitle: result.title,
           });
         },
         () => {

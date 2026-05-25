@@ -55,6 +55,8 @@ export interface UIMessage {
   cliApps?: UICliAppAttachment[];
   /** Settings-managed MCP presets explicitly attached to this user turn. */
   mcpPresets?: UIMcpPresetAttachment[];
+  /** Files imported into the group knowledge base with this user turn. */
+  knowledgeImports?: UIKnowledgeImport[];
   /** Assistant turn: accumulated model reasoning / thinking text. Built up
    * incrementally from ``reasoning_delta`` frames; finalized when
    * ``reasoning_end`` arrives. */
@@ -84,6 +86,14 @@ export interface UIMcpPresetAttachment {
   configured?: boolean;
   logo_url?: string | null;
   brand_color?: string | null;
+}
+
+export interface UIKnowledgeImport {
+  filename: string;
+  path: string;
+  title?: string;
+  sizeBytes?: number;
+  mimeType?: string;
 }
 
 /** Structured UI blob on ``progress`` WS frames; channels may add more ``kind`` values later. */
@@ -587,6 +597,14 @@ export interface OutboundMcpPresetMention {
   brand_color?: string | null;
 }
 
+export interface OutboundKnowledgeImport {
+  filename: string;
+  path: string;
+  title?: string;
+  size_bytes?: number;
+  mime_type?: string;
+}
+
 /** Response shape for ``GET .../webui-thread`` (server-built transcript replay). */
 export interface WebuiThreadPersistedPayload {
   schemaVersion: number;
@@ -612,6 +630,7 @@ export type Outbound =
       image_generation?: OutboundImageGeneration;
       cli_apps?: OutboundCliAppMention[];
       mcp_presets?: OutboundMcpPresetMention[];
+      knowledge_imports?: OutboundKnowledgeImport[];
       /** Marks messages sent by the embedded WebUI, without changing the
        * generic websocket protocol for other clients. */
       webui?: true;

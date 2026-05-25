@@ -32,6 +32,7 @@ from websockets.http11 import Response
 
 from nanobot.agent.tools.mcp import request_mcp_reload
 from nanobot.aibrother.knowledge import KnowledgeIndex
+from nanobot.aibrother.knowledge_import_utils import normalize_knowledge_imports
 from nanobot.bus.events import OUTBOUND_META_AGENT_UI, OutboundMessage
 from nanobot.bus.queue import MessageBus
 from nanobot.channels.base import BaseChannel
@@ -1249,6 +1250,9 @@ class WebSocketChannel(BaseChannel):
             mcp_presets = meta.get("mcp_presets")
             if isinstance(mcp_presets, list) and mcp_presets:
                 user_obj["mcp_presets"] = mcp_presets
+            knowledge_imports = meta.get("knowledge_imports")
+            if isinstance(knowledge_imports, list) and knowledge_imports:
+                user_obj["knowledge_imports"] = knowledge_imports
             self._try_append_webui_transcript(chat_id, user_obj)
         await super()._handle_message(
             sender_id,
@@ -1733,6 +1737,9 @@ class WebSocketChannel(BaseChannel):
             mcp_presets = normalize_mcp_preset_mentions(envelope.get("mcp_presets"))
             if mcp_presets:
                 metadata["mcp_presets"] = mcp_presets
+            knowledge_imports = normalize_knowledge_imports(envelope.get("knowledge_imports"))
+            if knowledge_imports:
+                metadata["knowledge_imports"] = knowledge_imports
             image_generation = envelope.get("image_generation")
             if isinstance(image_generation, dict) and image_generation.get("enabled") is True:
                 aspect_ratio = image_generation.get("aspect_ratio")

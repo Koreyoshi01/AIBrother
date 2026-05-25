@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { useClient } from "@/providers/ClientProvider";
+import { type KnowledgeImportRef, knowledgeImportsWirePayload } from "@/lib/knowledgeImportMessage";
 import { toMediaAttachment } from "@/lib/media";
+import { useClient } from "@/providers/ClientProvider";
 import {
   mergeToolProgressEvents,
   mergeUniqueToolTraceLines,
@@ -316,7 +317,11 @@ export interface SendOptions {
   imageGeneration?: OutboundImageGeneration;
   cliApps?: OutboundCliAppMention[];
   mcpPresets?: OutboundMcpPresetMention[];
+  /** Files imported into the knowledge base with this send (metadata + UI cards). */
+  knowledgeImports?: KnowledgeImportRef[];
 }
+
+export type { KnowledgeImportRef };
 
 export function useNanobotStream(
   chatId: string | null,
@@ -909,6 +914,9 @@ export function useNanobotStream(
             ...(fileMedia?.length ? { media: fileMedia } : {}),
             ...(options?.cliApps?.length ? { cliApps: options.cliApps } : {}),
             ...(options?.mcpPresets?.length ? { mcpPresets: options.mcpPresets } : {}),
+            ...(options?.knowledgeImports?.length
+              ? { knowledgeImports: options.knowledgeImports }
+              : {}),
           },
         ];
       });
@@ -916,8 +924,18 @@ export function useNanobotStream(
       // right away, before the first delta arrives from the server.
       setIsStreaming(true);
       const wireMedia = hasImages ? images!.map((i) => i.media) : undefined;
-      if (options) {
-        client.sendMessage(chatId, content, wireMedia, options);
+      const wireOptions = options
+        ? {
+            ...(options.imageGeneration ? { imageGeneration: options.imageGeneration } : {}),
+            ...(options.cliApps?.length ? { cliApps: options.cliApps } : {}),
+            ...(options.mcpPresets?.length ? { mcpPresets: options.mcpPresets } : {}),
+            ...(options.knowledgeImports?.length
+              ? { knowledgeImports: knowledgeImportsWirePayload(options.knowledgeImports) }
+              : {}),
+          }
+        : undefined;
+      if (wireOptions && Object.keys(wireOptions).length > 0) {
+        client.sendMessage(chatId, content, wireMedia, wireOptions);
       } else {
         client.sendMessage(chatId, content, wireMedia);
       }
