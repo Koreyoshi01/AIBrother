@@ -488,21 +488,21 @@
         }
       },
       "exampleChips": {
-        "centrifuge": {
-          "label": "Cara pakai sentrifug?",
-          "prompt": "Bagaimana cara mengoperasikan sentrifug?"
+        "experiment": {
+          "label": "Eksperimen",
+          "prompt": "Bantu saya dengan pekerjaan lab, peralatan, dan prosedur eksperimen."
         },
-        "abstract": {
-          "label": "Bantu tulis abstrak",
-          "prompt": "Bantu saya menulis abstrak paper."
+        "paper": {
+          "label": "Tulis paper",
+          "prompt": "Bantu saya menulis paper, termasuk abstrak, pendahuluan, dan referensi."
         },
-        "diary": {
-          "label": "Ringkas eksperimen hari ini",
-          "prompt": "Ringkas fenomena eksperimen hari ini."
+        "presentation": {
+          "label": "Presentasi",
+          "prompt": "Bantu saya menyiapkan presentasi, slide, dan poin-poin penting."
         },
-        "reaction": {
-          "label": "Larutan reaksi menguning",
-          "prompt": "Mengapa larutan reaksi berubah kuning?"
+        "journal": {
+          "label": "Jurnal lab",
+          "prompt": "Bantu saya mencatat observasi dan progres eksperimen hari ini."
         }
       }
     },

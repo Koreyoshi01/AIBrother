@@ -488,21 +488,21 @@
         }
       },
       "exampleChips": {
-        "centrifuge": {
-          "label": "Cách dùng máy ly tâm?",
-          "prompt": "Làm thế nào để vận hành máy ly tâm?"
+        "experiment": {
+          "label": "Thí nghiệm",
+          "prompt": "Hãy giúp tôi với công việc phòng lab, thiết bị và quy trình thí nghiệm."
         },
-        "abstract": {
-          "label": "Viết tóm tắt bài báo",
-          "prompt": "Giúp tôi viết phần tóm tắt bài báo."
+        "paper": {
+          "label": "Viết bài",
+          "prompt": "Hãy giúp tôi viết bài báo, bao gồm tóm tắt, phần mở đầu và tài liệu tham khảo."
         },
-        "diary": {
-          "label": "Tóm tắt thí nghiệm hôm nay",
-          "prompt": "Tóm tắt hiện tượng thí nghiệm hôm nay."
+        "presentation": {
+          "label": "Thuyết trình",
+          "prompt": "Hãy giúp tôi chuẩn bị thuyết trình, slide và các điểm chính."
         },
-        "reaction": {
-          "label": "Dung dịch phản ứng vàng",
-          "prompt": "Tại sao hỗn hợp phản ứng chuyển màu vàng?"
+        "journal": {
+          "label": "Nhật ký lab",
+          "prompt": "Hãy giúp tôi ghi lại quan sát và tiến độ thí nghiệm hôm nay."
         }
       }
     },

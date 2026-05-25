@@ -488,21 +488,21 @@
         }
       },
       "exampleChips": {
-        "centrifuge": {
-          "label": "How do I use the centrifuge?",
-          "prompt": "How do I use the centrifuge?"
+        "experiment": {
+          "label": "Experiments",
+          "prompt": "I need help with lab work, equipment, and experimental procedures."
         },
-        "abstract": {
-          "label": "Help me write an abstract",
-          "prompt": "Help me write a paper abstract."
+        "paper": {
+          "label": "Write paper",
+          "prompt": "I need help writing my paper, including abstract, introduction, and references."
         },
-        "diary": {
-          "label": "Summarize today's experiment",
-          "prompt": "Summarize today's experiment observations."
+        "presentation": {
+          "label": "Presentation",
+          "prompt": "I need help preparing a presentation, slides, and key talking points."
         },
-        "reaction": {
-          "label": "Why did the reaction turn yellow?",
-          "prompt": "Why did the reaction mixture turn yellow?"
+        "journal": {
+          "label": "Lab journal",
+          "prompt": "Help me record today's experiment observations and progress in my lab journal."
         }
       }
     },

@@ -95,6 +95,8 @@ interface ThreadComposerProps {
   runStartedAt?: number | null;
   /** Sustained objective for this chat (WebSocket ``goal_state``). */
   goalState?: GoalStateWsPayload;
+  /** Fill the input without sending (e.g. welcome quick actions). */
+  prefillDraft?: { text: string; id: number } | null;
 }
 
 const COMMAND_ICONS: Record<string, LucideIcon> = {
@@ -475,6 +477,7 @@ export function ThreadComposer({
   onStop,
   runStartedAt = null,
   goalState,
+  prefillDraft = null,
 }: ThreadComposerProps) {
   const { t } = useTranslation();
   const [value, setValue] = useState("");
@@ -841,6 +844,23 @@ export function ThreadComposer({
       el.focus();
     });
   }, []);
+
+  useEffect(() => {
+    const text = prefillDraft?.text?.trim();
+    if (!text) return;
+    setValue(text);
+    setCursorPosition(text.length);
+    setSlashMenuDismissed(false);
+    setCliAppMenuDismissed(false);
+    requestAnimationFrame(() => {
+      const el = textareaRef.current;
+      if (!el) return;
+      el.focus();
+      el.setSelectionRange(text.length, text.length);
+      el.style.height = "auto";
+      el.style.height = `${Math.min(el.scrollHeight, 260)}px`;
+    });
+  }, [prefillDraft?.id, prefillDraft?.text]);
 
   const chooseSlashCommand = useCallback(
     (command: SlashCommand) => {

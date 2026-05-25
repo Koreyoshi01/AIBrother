@@ -66,7 +66,7 @@
       "ariaLabel": "切換語言"
     },
     "historyLabel": "歷史對話",
-    "aibrother": "AI大师兄"
+    "aibrother": "課題組知識庫"
   },
   "settings": {
     "backToChat": "返回對話",
@@ -488,21 +488,21 @@
         }
       },
       "exampleChips": {
-        "centrifuge": {
-          "label": "如何操作離心機？",
-          "prompt": "如何操作離心機？"
+        "experiment": {
+          "label": "做實驗",
+          "prompt": "我要做實驗，請協助我解答實驗室操作、儀器使用和實驗步驟相關的問題。"
         },
-        "abstract": {
-          "label": "幫我寫論文摘要",
-          "prompt": "幫我寫論文摘要"
+        "paper": {
+          "label": "寫論文",
+          "prompt": "我要寫論文，請協助我處理摘要、引言、潤色和參考文獻等問題。"
         },
-        "diary": {
-          "label": "總結今天實驗現象",
-          "prompt": "總結今天實驗現象"
+        "presentation": {
+          "label": "做匯報",
+          "prompt": "我要做匯報，請協助我準備匯報內容、簡報結構和演講要點。"
         },
-        "reaction": {
-          "label": "反應液變黃怎麼辦？",
-          "prompt": "反應液變黃怎麼辦？"
+        "journal": {
+          "label": "做日記",
+          "prompt": "我要記錄實驗日記，請協助我總結今天的實驗現象和進展。"
         }
       }
     },

@@ -418,7 +418,7 @@ describe("ThreadShell", () => {
     await waitFor(() => expect(screen.getByText(/Current model/)).toBeInTheDocument());
   });
 
-  it("sends quick action prompts from the empty thread landing", async () => {
+  it("prefills quick action prompts in the composer on the empty thread landing", async () => {
     const client = makeClient();
     const onNewChat = vi.fn().mockResolvedValue("chat-a");
 
@@ -436,18 +436,18 @@ describe("ThreadShell", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "How do I use the centrifuge?" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Experiments" })).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "How do I use the centrifuge?" }));
+    fireEvent.click(screen.getByRole("button", { name: "Experiments" }));
 
-    await waitFor(() =>
-      expect(client.sendMessage).toHaveBeenCalledWith(
-        "chat-a",
-        "How do I use the centrifuge?",
-        undefined,
-      ),
-    );
+    await waitFor(() => {
+      expect(screen.getByRole("textbox", { name: "Message input" })).toHaveValue(
+        "I need help with lab work, equipment, and experimental procedures.",
+      );
+    });
+    expect(client.sendMessage).not.toHaveBeenCalled();
+    expect(onNewChat).not.toHaveBeenCalled();
   });
 
   it("does not leak the previous thread when opening a brand-new chat", async () => {
@@ -912,10 +912,10 @@ describe("ThreadShell", () => {
     );
     await act(async () => {});
 
-    expect(screen.getByText("How do I use the centrifuge?")).toBeInTheDocument();
-    expect(screen.getByText("Help me write an abstract")).toBeInTheDocument();
-    expect(screen.getByText("Summarize today's experiment")).toBeInTheDocument();
-    expect(screen.getByText("Why did the reaction turn yellow?")).toBeInTheDocument();
+    expect(screen.getByText("Experiments")).toBeInTheDocument();
+    expect(screen.getByText("Write paper")).toBeInTheDocument();
+    expect(screen.getByText("Presentation")).toBeInTheDocument();
+    expect(screen.getByText("Lab journal")).toBeInTheDocument();
   });
 
   it("surfaces a dismissible banner when the stream reports message_too_big", async () => {

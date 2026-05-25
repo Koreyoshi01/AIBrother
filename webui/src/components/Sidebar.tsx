@@ -79,12 +79,20 @@ export function Sidebar(props: SidebarProps) {
         )}
       >
         {!collapsed ? (
-          <div className="mb-5 px-1.5">
-            <div className="text-[22px] font-bold leading-tight text-foreground">
-              {t("app.brand")}
-            </div>
-            <div className="mt-1 text-xs text-muted-foreground">
-              {t("app.brandSub")}
+          <div className="mb-5 flex items-start gap-2.5 px-1.5">
+            <img
+              src="/brand/person.png"
+              alt=""
+              className="mt-0.5 h-8 w-8 shrink-0 select-none rounded-full object-cover"
+              draggable={false}
+            />
+            <div className="min-w-0">
+              <div className="text-[22px] font-bold leading-tight text-foreground">
+                {t("app.brand")}
+              </div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                {t("app.brandSub")}
+              </div>
             </div>
           </div>
         ) : (

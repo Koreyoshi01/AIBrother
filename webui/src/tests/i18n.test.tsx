@@ -8,7 +8,7 @@ import { resources } from "@/i18n";
 
 const QUICK_ACTION_KEYS = ["plan", "analyze", "brainstorm", "code", "summarize", "more"];
 const IMAGE_QUICK_ACTION_KEYS = ["icon", "sticker", "poster", "product", "portrait", "edit"];
-const EXAMPLE_CHIP_KEYS = ["centrifuge", "abstract", "diary", "reaction"];
+const EXAMPLE_CHIP_KEYS = ["experiment", "paper", "presentation", "journal"];
 const SLASH_COMMAND_KEYS = [
   "new",
   "stop",

@@ -1,6 +1,6 @@
 {
   "app": {
-    "brand": "🧑‍🔬 AI 大师兄",
+    "brand": "AI 大师兄",
     "loading": {
       "connecting": "正在连接 nanobot…",
       "boot": "正在加载 nanobot…"
@@ -66,7 +66,7 @@
       "ariaLabel": "切换语言"
     },
     "historyLabel": "历史对话",
-    "aibrother": "AI大师兄"
+    "aibrother": "课题组知识库"
   },
   "settings": {
     "backToChat": "返回对话",
@@ -488,21 +488,21 @@
         }
       },
       "exampleChips": {
-        "centrifuge": {
-          "label": "如何操作离心机？",
-          "prompt": "如何操作离心机？"
+        "experiment": {
+          "label": "做实验",
+          "prompt": "我要做实验，请协助我解答实验室操作、仪器使用和实验步骤相关的问题。"
         },
-        "abstract": {
-          "label": "帮我写论文摘要",
-          "prompt": "帮我写论文摘要"
+        "paper": {
+          "label": "写论文",
+          "prompt": "我要写论文，请协助我处理摘要、引言、润色和参考文献等问题。"
         },
-        "diary": {
-          "label": "总结今天实验现象",
-          "prompt": "总结今天实验现象"
+        "presentation": {
+          "label": "做汇报",
+          "prompt": "我要做汇报，请协助我准备汇报内容、幻灯片结构和演讲要点。"
         },
-        "reaction": {
-          "label": "反应液变黄怎么办？",
-          "prompt": "反应液变黄怎么办？"
+        "journal": {
+          "label": "做日记",
+          "prompt": "我要记录实验日记，请协助我总结今天的实验现象和进展。"
         }
       }
     },

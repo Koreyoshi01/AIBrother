@@ -744,7 +744,7 @@ function Shell({
       return;
     }
     if (view === "aibrother") {
-      document.title = t("app.documentTitle.chat", { title: "AI大师兄" });
+      document.title = t("app.documentTitle.chat", { title: "课题组知识库" });
       return;
     }
     document.title = activeSession

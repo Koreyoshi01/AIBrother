@@ -1,4 +1,10 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  FileText,
+  FlaskConical,
+  GraduationCap,
+  Presentation,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { ThreadComposer } from "@/components/thread/ThreadComposer";
@@ -22,6 +28,7 @@ import { inferProviderFromModelName, providerDisplayLabel } from "@/lib/provider
 import type { ChatSummary, CliAppInfo, McpPresetInfo, SettingsPayload, SlashCommand, UIMessage } from "@/lib/types";
 import { normalizeLegacyLongTaskMessages } from "@/lib/thread-display-compat";
 import { scrubSubagentUiMessages } from "@/lib/subagent-channel-display";
+import { cn } from "@/lib/utils";
 import { useClient } from "@/providers/ClientProvider";
 
 function projectWebuiThreadMessages(messages: UIMessage[]): UIMessage[] {
@@ -98,12 +105,41 @@ function toModelBadgeInfo(modelName: string | null, settings: SettingsPayload | 
   };
 }
 
-const EXAMPLE_CHIP_KEYS = [
-  "centrifuge",
-  "abstract",
-  "diary",
-  "reaction",
+const MODE_ACTION_KEYS = [
+  "experiment",
+  "paper",
+  "presentation",
+  "journal",
 ] as const;
+
+const MODE_ACTION_ICONS = {
+  experiment: FlaskConical,
+  paper: GraduationCap,
+  presentation: Presentation,
+  journal: FileText,
+} as const;
+
+const MODE_ACTION_STYLES: Record<
+  (typeof MODE_ACTION_KEYS)[number],
+  { button: string; icon: string }
+> = {
+  experiment: {
+    button: "bg-[#ecfdf5] text-[#059669] hover:bg-[#d1fae5]",
+    icon: "text-[#059669]",
+  },
+  paper: {
+    button: "bg-[#eef3ff] text-[#3370ff] hover:bg-[#dce7ff]",
+    icon: "text-[#3370ff]",
+  },
+  presentation: {
+    button: "bg-[#fff7ed] text-[#ea580c] hover:bg-[#ffedd5]",
+    icon: "text-[#ea580c]",
+  },
+  journal: {
+    button: "bg-[#f5f3ff] text-[#7c3aed] hover:bg-[#ede9fe]",
+    icon: "text-[#7c3aed]",
+  },
+};
 
 interface PendingFirstMessage {
   content: string;
@@ -138,6 +174,9 @@ export function ThreadShell({
   const [mcpPresets, setMcpPresets] = useState<McpPresetInfo[]>([]);
   const [settings, setSettings] = useState<SettingsPayload | null>(null);
   const [heroImageMode, setHeroImageMode] = useState(false);
+  const [composerPrefill, setComposerPrefill] = useState<{ text: string; id: number } | null>(
+    null,
+  );
   const [scrollToBottomSignal, setScrollToBottomSignal] = useState(0);
   const pendingFirstRef = useRef<PendingFirstMessage | null>(null);
   const messageCacheRef = useRef<Map<string, UIMessage[]>>(new Map());
@@ -428,23 +467,15 @@ export function ThreadShell({
     [send],
   );
 
-  const handleQuickAction = useCallback(
-    (prompt: string) => {
-      const options: SendOptions | undefined = heroImageMode
-        ? { imageGeneration: { enabled: true, aspect_ratio: null } }
-        : undefined;
-      if (session) {
-        handleThreadSend(prompt, undefined, options);
-        return;
-      }
-      void handleWelcomeSend(prompt, undefined, options);
-    },
-    [handleThreadSend, handleWelcomeSend, heroImageMode, session],
-  );
+  const handleQuickAction = useCallback((prompt: string) => {
+    setComposerPrefill({ text: prompt, id: Date.now() });
+  }, []);
 
   const quickActions = (
-    <div className="mx-auto flex w-full max-w-[720px] flex-wrap justify-center gap-2 pt-3">
-      {EXAMPLE_CHIP_KEYS.map((key) => {
+    <div className="mx-auto flex w-full max-w-[800px] flex-wrap items-center justify-center gap-3 px-2 pt-4">
+      {MODE_ACTION_KEYS.map((key) => {
+        const Icon = MODE_ACTION_ICONS[key];
+        const styles = MODE_ACTION_STYLES[key];
         const label = t(`thread.empty.exampleChips.${key}.label`);
         const prompt = t(`thread.empty.exampleChips.${key}.prompt`);
         return (
@@ -453,9 +484,15 @@ export function ThreadShell({
             type="button"
             onClick={() => handleQuickAction(prompt)}
             disabled={booting || isStreaming}
-            className="rounded-full border border-[#e8eaed] bg-[#f7f8fa] px-3.5 py-1.5 text-[13px] text-[#646a73] transition-colors hover:bg-[#eceef2] hover:text-foreground disabled:pointer-events-none disabled:opacity-60"
+            className={cn(
+              "inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-medium transition-colors",
+              "shadow-[0_1px_2px_rgba(0,0,0,.04)]",
+              styles.button,
+              "disabled:pointer-events-none disabled:opacity-60",
+            )}
           >
-            {label}
+            <Icon className={cn("h-4 w-4 shrink-0", styles.icon)} aria-hidden />
+            <span>{label}</span>
           </button>
         );
       })}
@@ -492,6 +529,7 @@ export function ThreadShell({
           onStop={stop}
           runStartedAt={runStartedAt}
           goalState={goalState}
+          prefillDraft={showHeroComposer ? composerPrefill : null}
         />
       ) : (
         <ThreadComposer
@@ -514,6 +552,7 @@ export function ThreadShell({
           onImageModeChange={setHeroImageMode}
           runStartedAt={runStartedAt}
           goalState={goalState}
+          prefillDraft={composerPrefill}
         />
       )}
       {showHeroComposer ? quickActions : null}
@@ -525,14 +564,14 @@ export function ThreadShell({
       {t("thread.loadingConversation")}
     </div>
   ) : (
-    <div className="flex w-full max-w-[560px] flex-col items-center text-center animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
+    <div className="mx-auto flex w-full max-w-[560px] flex-col items-center text-center animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
       <img
         src="/brand/person.png"
         alt=""
         className="mb-4 h-[180px] w-[180px] select-none object-contain"
         draggable={false}
       />
-      <h1 className="text-[24px] font-semibold leading-[1.45] text-foreground">
+      <h1 className="w-full text-[24px] font-semibold leading-[1.45] text-foreground">
         {t("thread.empty.greeting")}
       </h1>
     </div>

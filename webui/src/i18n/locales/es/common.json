@@ -488,21 +488,21 @@
         }
       },
       "exampleChips": {
-        "centrifuge": {
-          "label": "¿Cómo usar la centrifugadora?",
-          "prompt": "¿Cómo se opera la centrifugadora?"
+        "experiment": {
+          "label": "Experimentos",
+          "prompt": "Necesito ayuda con el trabajo de laboratorio, equipos y procedimientos experimentales."
         },
-        "abstract": {
-          "label": "Ayuda con el resumen",
-          "prompt": "Ayúdame a escribir el resumen del artículo."
+        "paper": {
+          "label": "Escribir paper",
+          "prompt": "Necesito ayuda para escribir mi artículo, incluyendo resumen, introducción y referencias."
         },
-        "diary": {
-          "label": "Resumir el experimento",
-          "prompt": "Resume las observaciones del experimento de hoy."
+        "presentation": {
+          "label": "Presentación",
+          "prompt": "Necesito ayuda para preparar una presentación, diapositivas y puntos clave."
         },
-        "reaction": {
-          "label": "Mezcla amarillenta",
-          "prompt": "¿Por qué la mezcla de reacción se volvió amarilla?"
+        "journal": {
+          "label": "Diario",
+          "prompt": "Ayúdame a registrar las observaciones y el progreso del experimento de hoy."
         }
       }
     },
