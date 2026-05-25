@@ -346,6 +346,8 @@ function Shell({
     key: string;
     label: string;
   } | null>(null);
+  const [newChatEpoch, setNewChatEpoch] = useState(0);
+  const [createChatError, setCreateChatError] = useState<string | null>(null);
   const restartSawDisconnectRef = useRef(false);
   const [restartToast, setRestartToast] = useState<string | null>(null);
   const [isRestarting, setIsRestarting] = useState(false);
@@ -442,6 +444,7 @@ function Shell({
 
   const onCreateChat = useCallback(async () => {
     try {
+      setCreateChatError(null);
       const chatId = await createChat();
       setActiveKey(`websocket:${chatId}`);
       setView("chat");
@@ -449,14 +452,19 @@ function Shell({
       return chatId;
     } catch (e) {
       console.error("Failed to create chat", e);
+      const message =
+        e instanceof Error ? e.message : t("chat.createFailed");
+      setCreateChatError(message);
+      window.setTimeout(() => setCreateChatError(null), 4_000);
       return null;
     }
-  }, [createChat]);
+  }, [createChat, t]);
 
   const onNewChat = useCallback(() => {
     setActiveKey(null);
     setView("chat");
     setMobileSidebarOpen(false);
+    setNewChatEpoch((value) => value + 1);
   }, []);
 
   const onSelectChat = useCallback(
@@ -846,6 +854,7 @@ function Shell({
             )}
           >
             <ThreadShell
+              key={newChatEpoch}
               session={activeSession}
               title={headerTitle}
               onToggleSidebar={toggleSidebar}
@@ -901,6 +910,14 @@ function Shell({
             className="fixed left-1/2 top-4 z-50 -translate-x-1/2 rounded-full border border-border/70 bg-popover px-4 py-2 text-sm font-medium text-popover-foreground shadow-lg"
           >
             {restartToast}
+          </div>
+        ) : null}
+        {createChatError ? (
+          <div
+            role="alert"
+            className="fixed left-1/2 top-4 z-50 -translate-x-1/2 rounded-full border border-destructive/40 bg-destructive/10 px-4 py-2 text-sm font-medium text-destructive shadow-lg"
+          >
+            {createChatError}
           </div>
         ) : null}
       </div>

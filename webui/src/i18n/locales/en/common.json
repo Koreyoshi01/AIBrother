@@ -408,6 +408,7 @@
     "hideArchived": "Hide archived",
     "delete": "Delete",
     "newChat": "New chat",
+    "createFailed": "Could not create a new chat. Check the gateway connection and try again.",
     "groups": {
       "pinned": "Pinned",
       "all": "Chats",

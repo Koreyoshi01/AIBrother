@@ -315,6 +315,25 @@ class WebuiTurnCoordinator:
             metadata=turn_metadata,
         ))
         self._schedule_title_update(msg, session_key=session_key)
+        self._schedule_chat_archive(msg, session_key=session_key)
+
+    def _schedule_chat_archive(self, msg: InboundMessage, *, session_key: str) -> None:
+        if msg.metadata.get("webui") is not True:
+            return
+
+        async def _archive_turn() -> None:
+            try:
+                from nanobot.aibrother.chat_knowledge import archive_session_turn
+                from nanobot.aibrother.knowledge import index_archived_chat_turn
+
+                session = self.sessions.get_or_create(session_key)
+                turn_id = archive_session_turn(session, workspace=self.sessions.workspace)
+                if turn_id is not None:
+                    index_archived_chat_turn(self.sessions.workspace, turn_id)
+            except Exception:
+                logger.warning("Failed to archive chat turn into knowledge base", exc_info=True)
+
+        self.schedule_background(_archive_turn())
 
     def _schedule_title_update(self, msg: InboundMessage, *, session_key: str) -> None:
         title_context = self._title_contexts.pop(session_key, None)

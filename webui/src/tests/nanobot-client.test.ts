@@ -288,6 +288,25 @@ describe("NanobotClient", () => {
     await expect(promise).resolves.toBe("fresh-id");
   });
 
+  it("ignores re-attach attached events while newChat() is pending", async () => {
+    const client = new NanobotClient({
+      url: "ws://test",
+      reconnect: false,
+      socketFactory: (url) => new FakeSocket(url) as unknown as WebSocket,
+    });
+    client.connect();
+    lastSocket().fakeOpen();
+    lastSocket().fakeMessage({
+      event: "ready",
+      chat_id: "default-session",
+      client_id: "anon-test",
+    });
+    const promise = client.newChat(1_000);
+    lastSocket().fakeMessage({ event: "attached", chat_id: "default-session" });
+    lastSocket().fakeMessage({ event: "attached", chat_id: "brand-new-id" });
+    await expect(promise).resolves.toBe("brand-new-id");
+  });
+
   it("queues sends while connecting and flushes on open", () => {
     const client = new NanobotClient({
       url: "ws://test",

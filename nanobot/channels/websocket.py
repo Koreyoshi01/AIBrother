@@ -104,10 +104,15 @@ def _normalize_config_path(path: str) -> str:
 
 
 def _aibrother_index(workspace: Path | None = None) -> KnowledgeIndex:
-    global _AIBROTHER_INDEX
-    if _AIBROTHER_INDEX is None:
-        _AIBROTHER_INDEX = KnowledgeIndex(workspace)
-    return _AIBROTHER_INDEX
+    from nanobot.aibrother.knowledge import get_knowledge_index
+
+    return get_knowledge_index(workspace)
+
+
+def refresh_aibrother_knowledge_index(workspace: Path | None = None) -> None:
+    from nanobot.aibrother.knowledge import refresh_knowledge_index
+
+    refresh_knowledge_index(workspace)
 
 
 class WebSocketConfig(Base):
@@ -1017,12 +1022,13 @@ class WebSocketChannel(BaseChannel):
     def _handle_aibrother_reindex(self, request: WsRequest) -> Response:
         if not self._check_api_token(request):
             return _http_error(401, "Unauthorized")
-        global _AIBROTHER_INDEX
-        _AIBROTHER_INDEX = KnowledgeIndex(get_workspace_path())
+        from nanobot.aibrother.knowledge import refresh_knowledge_index
+
+        index = refresh_knowledge_index(get_workspace_path())
         return _http_json_response(
             {
                 "ok": True,
-                "documents": [doc.to_dict() for doc in _AIBROTHER_INDEX.documents()],
+                "documents": [doc.to_dict() for doc in index.documents()],
             }
         )
 
@@ -1821,10 +1827,11 @@ class WebSocketChannel(BaseChannel):
 
         saved_path = Path(saved)
         try:
-            global _AIBROTHER_INDEX
-            index = KnowledgeIndex(get_workspace_path())
+            from nanobot.aibrother.knowledge import get_knowledge_index, refresh_knowledge_index
+
+            index = get_knowledge_index(get_workspace_path())
             document = index.import_file(saved_path, original_name=name)
-            _AIBROTHER_INDEX = index
+            refresh_knowledge_index(get_workspace_path())
         except FileNotFoundError:
             await self._send_event(
                 connection,

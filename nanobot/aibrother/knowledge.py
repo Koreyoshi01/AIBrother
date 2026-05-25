@@ -10,6 +10,8 @@ from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
+from loguru import logger
+
 from nanobot.utils.document import extract_text
 from nanobot.utils.helpers import safe_filename
 
@@ -29,6 +31,9 @@ _CATEGORY_PRIORITY = {
     "public": 3,
     "cards": 4,
 }
+
+_INDEX_SINGLETON: KnowledgeIndex | None = None
+_INDEX_ROOT: Path | None = None
 
 _ASSET_EXTENSIONS = frozenset({".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"})
 _KNOWLEDGE_DOC_EXTENSIONS = frozenset({".md", ".pdf"})
@@ -77,6 +82,51 @@ def resolve_aibrother_root(workspace: str | Path | None = None) -> Path:
     return (repo_root / "aibrother").resolve(strict=False)
 
 
+def get_knowledge_index(workspace: str | Path | None = None) -> KnowledgeIndex:
+    """Return a process-local cached knowledge index."""
+    global _INDEX_SINGLETON, _INDEX_ROOT
+    root = resolve_aibrother_root(workspace)
+    if _INDEX_SINGLETON is None or _INDEX_ROOT != root:
+        _INDEX_SINGLETON = KnowledgeIndex(root)
+        _INDEX_ROOT = root
+    return _INDEX_SINGLETON
+
+
+def refresh_knowledge_index(workspace: str | Path | None = None) -> KnowledgeIndex:
+    """Drop and rebuild the cached knowledge index."""
+    global _INDEX_SINGLETON, _INDEX_ROOT
+    root = resolve_aibrother_root(workspace)
+    _INDEX_SINGLETON = KnowledgeIndex(root)
+    _INDEX_ROOT = root
+    return _INDEX_SINGLETON
+
+
+def index_archived_chat_turn(workspace: str | Path | None, turn_id: int) -> None:
+    """Incrementally index one archived chat turn into the cached knowledge index."""
+    from nanobot.aibrother.chat_knowledge import (
+        CHAT_DB_NAME,
+        ChatKnowledgeStore,
+        format_turn_index_body,
+    )
+
+    store = ChatKnowledgeStore(workspace)
+    try:
+        row = store.get_turn(turn_id)
+        if row is None:
+            return
+        index = get_knowledge_index(workspace)
+        title = row["session_title"] or f"聊天记录 {row['created_at'][:10]}"
+        index.index_external_text(
+            path=f"knowledge/group_knowledge/{CHAT_DB_NAME}#turn-{row['id']}",
+            title=title,
+            category="group_knowledge",
+            text=format_turn_index_body(row),
+        )
+        index.commit()
+    finally:
+        store.close()
+
+
 class KnowledgeIndex:
     """Small SQLite FTS index over ``aibrother/knowledge`` Markdown files."""
 
@@ -110,7 +160,45 @@ class KnowledgeIndex:
             self._index_text_file(doc)
         for pdf in self._pdf_files():
             self._index_pdf_file(pdf)
+        self._index_chat_archive()
         self._conn.commit()
+
+    def index_external_text(
+        self,
+        *,
+        path: str,
+        title: str,
+        category: str,
+        text: str,
+    ) -> None:
+        """Index ad-hoc text (e.g. archived chat turns) into the FTS table."""
+        category_label = _CATEGORY_LABELS.get(category, category)
+        for line, chunk in _chunks(text):
+            self._conn.execute(
+                """
+                INSERT INTO chunks(path, title, category, category_label, line, content)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (path, title, category, category_label, line, chunk),
+            )
+
+    def commit(self) -> None:
+        self._conn.commit()
+
+    def _index_chat_archive(self) -> None:
+        db_path = self.knowledge_dir / "group_knowledge" / "chat_archive.db"
+        if not db_path.is_file():
+            return
+        try:
+            from nanobot.aibrother.chat_knowledge import ChatKnowledgeStore
+
+            store = ChatKnowledgeStore(self.root)
+            try:
+                store.index_into(self)
+            finally:
+                store.close()
+        except Exception as exc:
+            logger.warning("Failed to index chat archive: {}", exc)
 
     def _index_text_file(self, doc: Path) -> None:
         text = doc.read_text(encoding="utf-8", errors="replace")

@@ -408,6 +408,7 @@
     "hideArchived": "隐藏归档",
     "delete": "删除",
     "newChat": "新建对话",
+    "createFailed": "无法创建新对话，请检查网关连接后重试",
     "groups": {
       "pinned": "置顶",
       "all": "对话",

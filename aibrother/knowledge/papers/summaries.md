@@ -89,6 +89,19 @@
 - **标签**: ProGait, ML, GA, Gait Analysis, Prosthetics
 - **状态**: 自动生成摘要，建议人工核对
 
+## SMALLDRAFTS, BIGVERDICT: INFORMATIONINTENSIVEVISUALREASONING VIASPECULATION
+- **标题**: SMALLDRAFTS, BIGVERDICT: INFORMATIONINTENSIVEVISUALREASONING VIASPECULATION
+- **来源文件**: 2510.20812v3.pdf
+- **原文路径**: `knowledge/group_knowledge/uploads/2510-20812v3_5f81d0f7.pdf`
+- **导入时间**: 2026-05-25 06:48 UTC
+- **要点**: We propose Speculative Verdict (SV), a training-free framework inspired by speculative decoding that combines multiple lightweight draft experts with a large verdict model. To further improve efficiency and accuracy, SV introduces a consensus expert selection mechanism that forwards only high-agreement reasoning paths to the verdict. By synthesizing correct insights from multiple partially accurate reasoning paths, SV achieves both error correction and cost-efficiency compared to large proprietary models or training pipelines.
+- **结论1**: We propose Speculative Verdict (SV), a training-free framework inspired by speculative decoding that combines multiple lightweight draft experts with a large verdict model.
+- **结论2**: To further improve efficiency and accuracy, SV introduces a consensus expert selection mechanism that forwards only high-agreement reasoning paths to the verdict.
+- **结论3**: By synthesizing correct insights from multiple partially accurate reasoning paths, SV achieves both error correction and cost-efficiency compared to large proprietary models or training pipelines.
+- **结论4**: Empirically, SV achieves consistent gains on challenging information-intensive and high-resolution visual question answering benchmarks, including InfographicVQA, ChartMuseum, ChartQAPro, and HR-Bench 4K.
+- **标签**: SMALLDRAFTS, BIGVERDICT, SMALLDRAFTS, BIGVERDICT, SV, VLM, HR, Multi-modal
+- **状态**: 自动生成摘要，建议人工核对
+
 ## Not All Features Matter:
 - **标题**: Not All Features Matter:
 - **来源文件**: 2304-01195v1_b87eac3b.pdf

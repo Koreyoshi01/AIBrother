@@ -81,6 +81,8 @@ interface PendingNewChat {
   resolve: (chatId: string) => void;
   reject: (err: Error) => void;
   timer: ReturnType<typeof setTimeout>;
+  /** ``attached`` replays for chats already known before ``new_chat`` (reconnect re-attach). */
+  ignoreChatIds: Set<string>;
 }
 
 export interface KnowledgeImportResult {
@@ -306,7 +308,15 @@ export class NanobotClient {
         this.pendingNewChat = null;
         reject(new Error("newChat timed out"));
       }, timeoutMs);
-      this.pendingNewChat = { resolve, reject, timer };
+      // Reconnect re-attaches every known chat before the queued ``new_chat``
+      // frame is flushed; ignore those ``attached`` replays so we wait for the
+      // fresh id the server assigns to ``new_chat``.
+      this.pendingNewChat = {
+        resolve,
+        reject,
+        timer,
+        ignoreChatIds: new Set(this.knownChats),
+      };
       this.queueSend({ type: "new_chat" });
     });
   }
@@ -416,9 +426,10 @@ export class NanobotClient {
 
     if (parsed.event === "attached") {
       this.knownChats.add(parsed.chat_id);
-      if (this.pendingNewChat) {
-        clearTimeout(this.pendingNewChat.timer);
-        this.pendingNewChat.resolve(parsed.chat_id);
+      const pending = this.pendingNewChat;
+      if (pending && !pending.ignoreChatIds.has(parsed.chat_id)) {
+        clearTimeout(pending.timer);
+        pending.resolve(parsed.chat_id);
         this.pendingNewChat = null;
       }
       this.dispatch(parsed.chat_id, parsed);
