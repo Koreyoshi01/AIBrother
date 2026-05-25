@@ -65,7 +65,8 @@
       "label": "Idioma",
       "ariaLabel": "Cambiar idioma"
     },
-    "historyLabel": "Historial"
+    "historyLabel": "Historial",
+    "aibrother": "AI Lab"
   },
   "settings": {
     "backToChat": "Volver al chat",

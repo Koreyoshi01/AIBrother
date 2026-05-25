@@ -65,7 +65,8 @@
       "label": "語言",
       "ariaLabel": "切換語言"
     },
-    "historyLabel": "歷史對話"
+    "historyLabel": "歷史對話",
+    "aibrother": "AI大师兄"
   },
   "settings": {
     "backToChat": "返回對話",

@@ -119,7 +119,7 @@ export function Sidebar(props: SidebarProps) {
         />
         <SidebarActionButton
           collapsed={collapsed}
-          label="AI大师兄"
+          label={t("sidebar.aibrother")}
           onClick={props.onOpenAIBrother}
           icon={<BookOpen className="h-4 w-4" />}
         />

@@ -65,7 +65,8 @@
       "label": "言語",
       "ariaLabel": "言語を変更"
     },
-    "historyLabel": "履歴"
+    "historyLabel": "履歴",
+    "aibrother": "AI Lab"
   },
   "settings": {
     "backToChat": "チャットに戻る",

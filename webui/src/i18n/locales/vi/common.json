@@ -65,7 +65,8 @@
       "label": "Ngôn ngữ",
       "ariaLabel": "Đổi ngôn ngữ"
     },
-    "historyLabel": "Lịch sử"
+    "historyLabel": "Lịch sử",
+    "aibrother": "AI Lab"
   },
   "settings": {
     "backToChat": "Quay lại trò chuyện",

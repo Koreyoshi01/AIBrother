@@ -1,7 +1,6 @@
 {
   "app": {
     "brand": "🧑‍🔬 AI 大师兄",
-    "brandSub": "课题组智能助手",
     "loading": {
       "connecting": "正在连接 nanobot…",
       "boot": "正在加载 nanobot…"
@@ -37,7 +36,8 @@
     },
     "meta": {
       "description": "AI 大师兄 —— 课题组智能助手。"
-    }
+    },
+    "brandSub": "课题组智能助手"
   },
   "sidebar": {
     "navigation": "侧边栏导航",
@@ -46,7 +46,6 @@
     "toggleTheme": "切换主题",
     "home": "首页",
     "newChat": "新对话",
-    "historyLabel": "历史对话",
     "searchAria": "搜索",
     "viewOptions": "视图",
     "compactList": "紧凑列表",
@@ -65,7 +64,9 @@
     "language": {
       "label": "语言",
       "ariaLabel": "切换语言"
-    }
+    },
+    "historyLabel": "历史对话",
+    "aibrother": "AI大师兄"
   },
   "settings": {
     "backToChat": "返回对话",
@@ -432,27 +433,8 @@
   },
   "thread": {
     "loadingConversation": "正在加载对话…",
-    "subtitle": "内容由 AI 大师兄 生成",
     "empty": {
       "greeting": "我是AI大师兄，有什么我可以帮你的吗？",
-      "exampleChips": {
-        "centrifuge": {
-          "label": "如何操作离心机？",
-          "prompt": "如何操作离心机？"
-        },
-        "abstract": {
-          "label": "帮我写论文摘要",
-          "prompt": "帮我写论文摘要"
-        },
-        "diary": {
-          "label": "总结今天实验现象",
-          "prompt": "总结今天实验现象"
-        },
-        "reaction": {
-          "label": "反应液变黄怎么办？",
-          "prompt": "反应液变黄怎么办？"
-        }
-      },
       "quickActions": {
         "plan": {
           "title": "创建项目计划",
@@ -504,6 +486,24 @@
           "title": "编辑图片",
           "prompt": "帮我编辑一张图片。先让我上传或指定要编辑的图片，然后生成编辑后的结果。"
         }
+      },
+      "exampleChips": {
+        "centrifuge": {
+          "label": "如何操作离心机？",
+          "prompt": "如何操作离心机？"
+        },
+        "abstract": {
+          "label": "帮我写论文摘要",
+          "prompt": "帮我写论文摘要"
+        },
+        "diary": {
+          "label": "总结今天实验现象",
+          "prompt": "总结今天实验现象"
+        },
+        "reaction": {
+          "label": "反应液变黄怎么办？",
+          "prompt": "反应液变黄怎么办？"
+        }
       }
     },
     "header": {
@@ -525,7 +525,6 @@
       "goalStateExpandAria": "查看完整目标",
       "goalStateSheetTitle": "目标",
       "send": "发送消息",
-      "sendLabel": "发送",
       "stop": "停止响应",
       "attachImage": "添加图片",
       "imageMode": {
@@ -637,10 +636,12 @@
         "too_large": "图片太大，请换一张小一点的",
         "io": "无法读取该文件"
       },
-      "goalStateCloseAria": "关闭目标"
+      "goalStateCloseAria": "关闭目标",
+      "sendLabel": "发送"
     },
     "scrollToBottom": "滚动到底部",
-    "loadEarlier": "加载更早消息"
+    "loadEarlier": "加载更早消息",
+    "subtitle": "内容由 AI 大师兄 生成"
   },
   "message": {
     "streaming": "流式输出中",

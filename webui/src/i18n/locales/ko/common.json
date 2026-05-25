@@ -65,7 +65,8 @@
       "label": "언어",
       "ariaLabel": "언어 변경"
     },
-    "historyLabel": "기록"
+    "historyLabel": "기록",
+    "aibrother": "AI Lab"
   },
   "settings": {
     "backToChat": "채팅으로 돌아가기",

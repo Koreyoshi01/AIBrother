@@ -65,7 +65,8 @@
       "label": "Bahasa",
       "ariaLabel": "Ganti bahasa"
     },
-    "historyLabel": "Riwayat"
+    "historyLabel": "Riwayat",
+    "aibrother": "AI Lab"
   },
   "settings": {
     "backToChat": "Kembali ke obrolan",
