@@ -147,6 +147,7 @@ packages = ["nanobot"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "bridge" = "nanobot/bridge"
+"webui" = "nanobot/webui"
 
 [tool.hatch.build.targets.sdist]
 include = [
