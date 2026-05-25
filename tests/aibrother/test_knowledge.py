@@ -76,21 +76,50 @@ class AIBrotherKnowledgeTests(unittest.TestCase):
 
         root = Path(tempfile.mkdtemp())
         (root / "knowledge" / "group_knowledge" / "uploads").mkdir(parents=True)
+        (root / "knowledge" / "papers").mkdir(parents=True)
         index = KnowledgeIndex(root)
         source = root / "paper.pdf"
         source.write_bytes(b"%PDF-1.4 paper")
 
         with patch(
             "nanobot.aibrother.knowledge.extract_text",
-            return_value="Generative Pre-Trained Diffusion 时间序列",
+            return_value="Generative Pre-Trained Diffusion 时间序列 forecasting results",
         ):
             document = index.import_file(source, original_name="2406.02212v1.pdf")
 
         self.assertTrue(document.path.endswith(".pdf"))
         self.assertTrue((root / document.path).is_file())
-        self.assertNotIn("--- Page 1 ---", (root / document.path).read_bytes().decode("latin-1"))
+        summaries = (root / "knowledge" / "papers" / "summaries.md").read_text(encoding="utf-8")
+        self.assertIn("2406.02212v1", summaries)
+        self.assertIn(document.path, summaries)
+        self.assertIn("时间序列", summaries)
         results = index.search("时间序列", limit=3)
         self.assertTrue(any(document.path in item.path for item in results))
+        summary_hits = index.search("Generative Pre-Trained Diffusion", limit=5)
+        self.assertTrue(any("papers/summaries.md" in item.path for item in summary_hits))
+
+    def test_sync_paper_summaries_backfills_existing_pdf(self) -> None:
+        import tempfile
+
+        root = Path(tempfile.mkdtemp())
+        uploads = root / "knowledge" / "group_knowledge" / "uploads"
+        papers = root / "knowledge" / "papers"
+        uploads.mkdir(parents=True)
+        papers.mkdir(parents=True)
+        pdf = uploads / "2506-12623v1_abcd1234.pdf"
+        pdf.write_bytes(b"%PDF-1.4 cached paper")
+
+        with patch(
+            "nanobot.aibrother.knowledge.extract_text",
+            return_value="CO2 capture using amine solvents kinetic study",
+        ):
+            index = KnowledgeIndex(root)
+
+        summaries = (papers / "summaries.md").read_text(encoding="utf-8")
+        self.assertIn("CO2 capture", summaries)
+        self.assertIn("knowledge/group_knowledge/uploads/2506-12623v1_abcd1234.pdf", summaries)
+        hits = index.search("CO2 capture", limit=5)
+        self.assertTrue(any("papers/summaries.md" in item.path for item in hits))
 
     def test_read_file_marks_pdf_documents(self) -> None:
         import tempfile

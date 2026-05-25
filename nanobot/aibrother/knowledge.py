@@ -13,6 +13,11 @@ from pathlib import Path
 from nanobot.utils.document import extract_text
 from nanobot.utils.helpers import safe_filename
 
+try:
+    from aibrother.resources import analyze_resource
+except ImportError:  # pragma: no cover - optional when aibrother is not on path
+    analyze_resource = None  # type: ignore[assignment,misc]
+
 
 _CATEGORY_LABELS = {
     "lab_manual": "实验手册",
@@ -105,6 +110,7 @@ class KnowledgeIndex:
 
     def reindex(self) -> None:
         self._conn.execute("DELETE FROM chunks")
+        self._sync_paper_summaries()
         for doc in self._markdown_files():
             self._index_text_file(doc)
         for pdf in self._pdf_files():
@@ -246,6 +252,11 @@ class KnowledgeIndex:
             pdf_name = safe_filename(f"{slug}_{suffix}.pdf")
             stored_path = uploads_dir / pdf_name
             shutil.copy2(source, stored_path)
+            self._append_paper_summary(
+                pdf_path=stored_path,
+                original_name=display_name,
+                imported_at=imported_at,
+            )
         else:
             extracted = extract_text(source)
             if extracted is None:
@@ -418,6 +429,280 @@ class KnowledgeIndex:
         if not path.is_file() or path.suffix.lower() not in _KNOWLEDGE_DOC_EXTENSIONS:
             raise FileNotFoundError(relative_path)
         return path
+
+
+    def _summaries_path(self) -> Path:
+        return self.knowledge_dir / "papers" / "summaries.md"
+
+    def _sync_paper_summaries(self) -> None:
+        """Append auto-generated entries for uploaded PDFs missing from summaries.md."""
+        summaries_path = self._summaries_path()
+        existing = (
+            summaries_path.read_text(encoding="utf-8")
+            if summaries_path.is_file()
+            else ""
+        )
+        for pdf in self._pdf_files():
+            rel_pdf = _rel(pdf, self.root)
+            if _paper_summary_present(existing, rel_pdf):
+                if not _paper_summary_needs_refresh(existing, rel_pdf):
+                    continue
+                existing = _remove_paper_summary_block(existing, rel_pdf)
+            imported_at = datetime.fromtimestamp(
+                pdf.stat().st_mtime,
+                tz=UTC,
+            ).strftime("%Y-%m-%d %H:%M UTC")
+            section = self._build_paper_summary_section(
+                pdf_path=pdf,
+                original_name=pdf.name,
+                imported_at=imported_at,
+            )
+            existing = _append_paper_summary_text(existing, section, summaries_path)
+
+    def _append_paper_summary(
+        self,
+        *,
+        pdf_path: Path,
+        original_name: str,
+        imported_at: str,
+    ) -> None:
+        summaries_path = self._summaries_path()
+        existing = (
+            summaries_path.read_text(encoding="utf-8")
+            if summaries_path.is_file()
+            else ""
+        )
+        rel_pdf = _rel(pdf_path, self.root)
+        if _paper_summary_present(existing, rel_pdf):
+            return
+        section = self._build_paper_summary_section(
+            pdf_path=pdf_path,
+            original_name=original_name,
+            imported_at=imported_at,
+        )
+        _append_paper_summary_text(existing, section, summaries_path)
+
+    def _build_paper_summary_section(
+        self,
+        *,
+        pdf_path: Path,
+        original_name: str,
+        imported_at: str,
+    ) -> str:
+        extracted = extract_text(pdf_path)
+        if not extracted or extracted.startswith("[error:"):
+            extracted = ""
+        analysis_text = _paper_analysis_text(extracted)
+        heading = _paper_heading(original_name, extracted)
+        if analyze_resource is not None:
+            analysis = analyze_resource(
+                analysis_text,
+                "read_papers",
+                title=heading,
+                filename=original_name,
+            )
+            title = str(analysis.get("title") or heading)
+            summary = str(analysis.get("summary") or "")
+            key_findings = [
+                str(item) for item in analysis.get("key_findings", []) if str(item).strip()
+            ]
+            tags = [str(item) for item in analysis.get("tags", []) if str(item).strip()]
+        else:
+            title = heading
+            summary = extracted[:1200] if analysis_text else "未能从 PDF 中抽取可用正文。"
+            key_findings = []
+            tags = ["论文"]
+        if not summary and key_findings:
+            summary = "；".join(key_findings[:3])
+        if (
+            not summary
+            or "未识别到明确结论" in summary
+            or summary == "未能从原文件中抽取可用正文。"
+        ) and analysis_text:
+            summary = re.sub(r"\s+", " ", analysis_text).strip()[:1200]
+        if not summary:
+            summary = "未能从 PDF 中抽取可用正文，请人工补充摘要。"
+        return _format_paper_summary_section(
+            heading=title,
+            original_name=original_name,
+            pdf_rel=_rel(pdf_path, self.root),
+            imported_at=imported_at,
+            summary=summary,
+            key_findings=key_findings,
+            tags=tags,
+        )
+
+
+def _paper_summary_present(summaries_text: str, pdf_rel: str) -> bool:
+    return _paper_summary_block(summaries_text, pdf_rel) is not None
+
+
+def _paper_summary_block(summaries_text: str, pdf_rel: str) -> str | None:
+    marker = f"`{pdf_rel}`"
+    if marker not in summaries_text and pdf_rel not in summaries_text:
+        return None
+    parts = re.split(r"(?=^## )", summaries_text, flags=re.MULTILINE)
+    for part in parts:
+        if marker in part or pdf_rel in part:
+            return part
+    return None
+
+
+def _paper_summary_needs_refresh(summaries_text: str, pdf_rel: str) -> bool:
+    block = _paper_summary_block(summaries_text, pdf_rel)
+    if not block:
+        return False
+    if "自动生成摘要" not in block:
+        return False
+    weak_markers = (
+        "Accuracy (%)",
+        "Pages(Images)",
+        "query_update",
+        "1 Introduction",
+        "1. Introduction",
+        "@",
+        "Our APE",
+        "Tip-Adapter",
+        "--- Page 1 ---",
+        "未识别到明确结论",
+    )
+    return any(marker in block for marker in weak_markers) or (
+        "**要点**: 未识别到明确结论" in block
+    )
+
+
+def _remove_paper_summary_block(summaries_text: str, pdf_rel: str) -> str:
+    block = _paper_summary_block(summaries_text, pdf_rel)
+    if not block:
+        return summaries_text
+    updated = summaries_text.replace(block, "", 1)
+    return re.sub(r"\n{3,}", "\n\n", updated).strip() + "\n"
+
+
+def _append_paper_summary_text(
+    existing: str,
+    section: str,
+    summaries_path: Path,
+) -> str:
+    summaries_path.parent.mkdir(parents=True, exist_ok=True)
+    if not existing.strip():
+        body = "# 相关论文摘要\n\n" + section.strip() + "\n"
+    else:
+        body = existing.rstrip() + "\n\n" + section.strip() + "\n"
+    summaries_path.write_text(body, encoding="utf-8")
+    return body
+
+
+def _paper_heading(original_name: str, extracted: str = "") -> str:
+    title = _paper_title_from_text(extracted)
+    if title:
+        return title
+    stem = Path(original_name).stem
+    match = re.match(
+        r"^(?P<id>\d{4}[._-]\d{4,5}(?:v\d+)?)",
+        stem,
+        flags=re.IGNORECASE,
+    )
+    if match:
+        return match.group("id").replace("_", ".").replace("-", ".")
+    return _title_from_filename(stem)
+
+
+def _paper_title_from_text(text: str) -> str:
+    """Best-effort title from the first page of an academic PDF."""
+    if not text:
+        return ""
+    normalized = _normalize_pdf_text(text)
+    lines = [line.strip() for line in normalized.splitlines() if line.strip()]
+    skip_prefixes = (
+        "abstract",
+        "introduction",
+        "arxiv",
+        "doi",
+        "keywords",
+        "published",
+        "preprint",
+        "page ",
+        "figure ",
+        "table ",
+        "--- page",
+    )
+    candidates: list[str] = []
+    for line in lines[:40]:
+        lowered = line.lower()
+        if any(lowered.startswith(prefix) for prefix in skip_prefixes):
+            continue
+        if re.fullmatch(r"[\d\s\-–—]+", line):
+            continue
+        if "@" in line or "http" in lowered or "arxiv:" in lowered:
+            continue
+        if re.match(r"^\d+\s", line):
+            continue
+        if len(line) < 12 or len(line) > 220:
+            continue
+        if re.search(r"[\u4e00-\u9fff]", line) or re.search(r"[A-Za-z]{3,}", line):
+            candidates.append(line)
+    if not candidates:
+        return ""
+    title = candidates[0]
+    if len(candidates) > 1 and len(title) < 48 and not title.endswith((".", "?", "!")):
+        second = candidates[1]
+        if second[:1].islower() or second.lower().startswith(("of ", "for ", "on ", "in ")):
+            title = f"{title} {second}"
+    return title
+
+
+def _normalize_pdf_text(text: str) -> str:
+    cleaned = text.replace("\r\n", "\n").replace("\r", "\n")
+    cleaned = re.sub(r"--- Page \d+ ---\s*", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"(\w)-\s*\n\s*(\w)", r"\1\2", cleaned)
+    return cleaned
+
+
+def _paper_analysis_text(text: str) -> str:
+    """Prefer abstract/introduction blocks when building auto summaries."""
+    if not text:
+        return ""
+    normalized = _normalize_pdf_text(text)
+    patterns = (
+        r"(?is)\babstract\b[:\s-]*\n(.{120,5000}?)(?:\n\s*(?:keywords|index terms|1[\.\s]+introduction)\b)",
+        r"(?is)\b摘要\b[：:\s-]*\n(.{80,5000}?)(?:\n\s*(?:关键词|1[\.\s、]+引言)\b)",
+        r"(?is)\b1[\.\s]+introduction\b[:\s-]*\n(.{120,3000}?)(?:\n\s*2[\.\s]+)",
+    )
+    for pattern in patterns:
+        match = re.search(pattern, normalized)
+        if match:
+            block = re.sub(r"\s+", " ", match.group(1)).strip()
+            if len(block) >= 80:
+                return block[:6000]
+    return normalized[:6000]
+
+
+def _format_paper_summary_section(
+    *,
+    heading: str,
+    original_name: str,
+    pdf_rel: str,
+    imported_at: str,
+    summary: str,
+    key_findings: list[str],
+    tags: list[str],
+) -> str:
+    lines = [
+        f"## {heading.strip()}",
+        f"- **标题**: {heading.strip()}",
+        f"- **来源文件**: {original_name}",
+        f"- **原文路径**: `{pdf_rel}`",
+        f"- **导入时间**: {imported_at}",
+        f"- **要点**: {summary.strip()}",
+    ]
+    if key_findings:
+        findings = "；".join(key_findings[:3])
+        lines.append(f"- **关键结论**: {findings}")
+    if tags:
+        lines.append(f"- **标签**: {', '.join(tags[:8])}")
+    lines.append("- **状态**: 自动生成摘要，建议人工核对")
+    return "\n".join(lines)
 
 
 def _chunks(text: str, *, max_chars: int = 900) -> list[tuple[int, str]]:
